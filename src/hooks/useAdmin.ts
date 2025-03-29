@@ -50,7 +50,7 @@ export function useAdmin() {
           .from('staff_members')
           .select('role')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         // Only update state if component is still mounted
         if (!mounted) return;
