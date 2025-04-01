@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { PackageSelection } from './pages/PackageSelection';
 import { MealSelection } from './pages/MealSelection';
@@ -20,12 +20,44 @@ import { useAdmin } from './hooks/useAdmin';
 import { UserAvatar } from './components/UserAvatar';
 import { DebugPanel } from './components/DebugPanel';
 import { AdminRoute } from './components/AdminRoute';
+import { initAnalytics, identifyUser, trackEvent, EventTypes } from './lib/analytics';
+
+// Componente para seguimiento de cambios de ruta
+function RouteTracker() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Cada vez que cambia la ruta, registramos un evento de vista de página
+    trackEvent(EventTypes.PAGE_VIEW, {
+      page_path: location.pathname,
+      page_location: window.location.href,
+      page_title: document.title
+    });
+  }, [location]);
+  
+  return null;
+}
 
 function App() {
   const { user, signOut } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Inicializar analytics al cargar la aplicación
+  useEffect(() => {
+    // Inicializar con las claves de API (estas deberían venir de variables de entorno)
+    initAnalytics({
+      googleAnalyticsId: import.meta.env.VITE_GA_MEASUREMENT_ID,
+      amplitudeApiKey: import.meta.env.VITE_AMPLITUDE_API_KEY,
+      enabled: true, // Habilitar en todos los entornos para desarrollo y pruebas
+    });
+  }, []);
+
+  // Identificar al usuario cuando está autenticado
+  useEffect(() => {
+    identifyUser(user);
+  }, [user]);
 
   const closeAllMenus = () => {
     setIsMenuOpen(false);
@@ -34,6 +66,7 @@ function App() {
 
   return (
     <Router>
+      <RouteTracker />
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <nav className="bg-white shadow-sm relative z-50">
           <div className="container mx-auto px-4 py-4">

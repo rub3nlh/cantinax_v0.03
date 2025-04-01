@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { trackEvent, EventTypes } from '../lib/analytics';
 
 interface DiscountCodeInputProps {
   onApplyCode: (code: string) => Promise<void>; // Function to call when applying
@@ -22,11 +23,50 @@ export const DiscountCodeInput: React.FC<DiscountCodeInputProps> = ({
 
   const handleApplyClick = async () => {
     if (!inputValue.trim()) return; // Don't apply if input is empty
-    await onApplyCode(inputValue.trim().toUpperCase()); // Standardize to uppercase
+    
+    const code = inputValue.trim().toUpperCase();
+    
+    // Tracking de intento de aplicación de código de descuento
+    trackEvent(EventTypes.DISCOUNT_CODE_APPLIED, {
+      discount_code: code,
+      success: false, // Inicialmente false, se actualizará si tiene éxito
+      step: 'attempt',
+      funnel_step: 'discount_code_input'
+    });
+    
+    try {
+      await onApplyCode(code); // Standardize to uppercase
+      
+      // Si no hay error, el código se aplicó con éxito
+      if (!error) {
+        trackEvent(EventTypes.DISCOUNT_CODE_APPLIED, {
+          discount_code: code,
+          success: true,
+          step: 'success',
+          funnel_step: 'discount_code_input'
+        });
+      }
+    } catch (err) {
+      // Error al aplicar el código
+      trackEvent(EventTypes.VALIDATION_ERROR, {
+        discount_code: code,
+        error_message: err instanceof Error ? err.message : 'Error desconocido',
+        funnel_step: 'discount_code_input'
+      });
+    }
   };
 
   const handleRemoveClick = () => {
     setInputValue(''); // Clear input when removing
+    
+    // Tracking de eliminación de código de descuento
+    if (appliedCode) {
+      trackEvent(EventTypes.DISCOUNT_CODE_REMOVED, {
+        discount_code: appliedCode,
+        funnel_step: 'discount_code_input'
+      });
+    }
+    
     onRemoveCode();
   };
 

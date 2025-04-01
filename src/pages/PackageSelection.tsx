@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Stepper } from '../components/Stepper';
 import { PackageCard } from '../components/PackageCard';
@@ -6,15 +6,32 @@ import { Footer } from '../components/Footer';
 import { packages } from '../data/packages';
 import { Package } from '../types';
 import { motion } from 'framer-motion';
+import { trackEvent, EventTypes } from '../lib/analytics';
 
 export const PackageSelection: React.FC = () => {
   const navigate = useNavigate();
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [customMeals, setCustomMeals] = useState<number>(0);
   const [customDays, setCustomDays] = useState<number>(0);
+  
+  // Registrar visualización de la página de paquetes
+  useEffect(() => {
+    trackEvent(EventTypes.PACKAGE_VIEW, {
+      page: 'package_selection'
+    });
+  }, []);
 
   const handlePackageSelect = (pkg: Package) => {
     setSelectedPackage(pkg);
+    
+    // Registrar selección de paquete
+    trackEvent(EventTypes.PACKAGE_SELECT, {
+      package_id: pkg.id,
+      package_name: pkg.name,
+      package_price: pkg.price,
+      is_custom: pkg.id === 'custom'
+    });
+    
     if (pkg.id !== 'custom') {
       setCustomMeals(0);
       setCustomDays(0);
@@ -62,6 +79,18 @@ export const PackageSelection: React.FC = () => {
         description: `${customMeals} comidas en ${customDays} días`
       };
     }
+
+    // Registrar finalización de la selección de paquete y avance al siguiente paso
+    trackEvent(EventTypes.BUTTON_CLICK, {
+      button: 'continue_to_meal_selection',
+      package_id: packageToSend.id,
+      package_name: packageToSend.name,
+      package_price: packageToSend.price,
+      package_meals: packageToSend.meals,
+      is_custom: packageToSend.id === 'custom',
+      funnel_step: 'package_selection',
+      next_step: 'meal_selection'
+    });
 
     navigate('/meal-selection', { state: { package: packageToSend } });
   };

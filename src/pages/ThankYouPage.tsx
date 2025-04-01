@@ -1,10 +1,11 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle, Calendar, ChevronRight, ShoppingBag } from 'lucide-react';
 import { OrderSummary } from '../types';
 import { Footer } from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
+import { trackEvent, EventTypes } from '../lib/analytics';
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('es', {
@@ -20,8 +21,29 @@ function formatDate(date: Date): string {
 export const ThankYouPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { package: selectedPackage, purchaseDate } = location.state as OrderSummary & { purchaseDate: Date };
+  const { package: selectedPackage, purchaseDate } = location.state as Partial<OrderSummary & { purchaseDate: Date }> || {};
+  
+  // Obtener order_id de los parámetros de URL
+  const orderId = searchParams.get('order');
+  
+  // Registrar completación de compra
+  useEffect(() => {
+    if (selectedPackage || orderId) {
+      trackEvent(EventTypes.PURCHASE_COMPLETED, {
+        order_id: orderId,
+        package_id: selectedPackage?.id,
+        package_name: selectedPackage?.name,
+        package_price: selectedPackage?.price,
+        purchase_date: purchaseDate ? new Date(purchaseDate).toISOString() : new Date().toISOString(),
+        is_logged_in: !!user,
+        user_id: user?.id,
+        funnel_step: 'purchase_completed',
+        conversion: true
+      });
+    }
+  }, [selectedPackage, orderId, user, purchaseDate]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -72,7 +94,16 @@ export const ThankYouPage: React.FC = () => {
                   Puedes ver el estado de tus entregas y hacer seguimiento de tu pedido en cualquier momento
                 </p>
                 <button
-                  onClick={() => navigate('/my-orders')}
+                  onClick={() => {
+                    // Tracking de clic en ver órdenes
+                    trackEvent(EventTypes.BUTTON_CLICK, {
+                      button: 'view_orders',
+                      page: 'thank_you',
+                      order_id: orderId,
+                      user_id: user?.id
+                    });
+                    navigate('/my-orders');
+                  }}
                   className="w-full py-4 bg-blue-500 text-white rounded-xl font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
                 >
                   <ShoppingBag className="w-5 h-5" />
@@ -86,7 +117,16 @@ export const ThankYouPage: React.FC = () => {
                   Crea una cuenta para hacer seguimiento de tus pedidos y gestionar tus direcciones de entrega
                 </p>
                 <button
-                  onClick={() => navigate('/signup')}
+                  onClick={() => {
+                    // Tracking de clic en crear cuenta después de compra
+                    trackEvent(EventTypes.BUTTON_CLICK, {
+                      button: 'create_account_after_purchase',
+                      page: 'thank_you',
+                      order_id: orderId,
+                      funnel_step: 'account_creation_from_thank_you'
+                    });
+                    navigate('/signup');
+                  }}
                   className="w-full py-4 bg-blue-500 text-white rounded-xl font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
                 >
                   Crear cuenta

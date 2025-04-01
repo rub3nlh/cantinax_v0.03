@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Stepper } from '../components/Stepper';
 import { MealCard } from '../components/MealCard';
@@ -7,6 +7,7 @@ import { Footer } from '../components/Footer';
 import { Package, Meal } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMeals } from '../hooks/useMeals';
+import { trackEvent, EventTypes } from '../lib/analytics';
 
 export const MealSelection: React.FC = () => {
   const location = useLocation();
@@ -16,6 +17,18 @@ export const MealSelection: React.FC = () => {
 
   const [mealCounts, setMealCounts] = useState<Record<string, number>>({});
   const [selectedMealDetails, setSelectedMealDetails] = useState<Meal | null>(null);
+  
+  // Registrar visualización de la página de selección de comidas
+  useEffect(() => {
+    trackEvent(EventTypes.PAGE_VIEW, {
+      page: 'meal_selection',
+      package_id: selectedPackage?.id,
+      package_name: selectedPackage?.name,
+      package_price: selectedPackage?.price,
+      meals_to_select: selectedPackage?.meals,
+      funnel_step: 'meal_selection'
+    });
+  }, [selectedPackage]);
 
   const totalMealsSelected = useMemo(() => {
     return Object.values(mealCounts).reduce((sum, count) => sum + count, 0);
@@ -27,10 +40,23 @@ export const MealSelection: React.FC = () => {
         ...prevCounts,
         [meal.id]: (prevCounts[meal.id] || 0) + 1,
       }));
+      
+      // Registrar adición de comida
+      trackEvent(EventTypes.MEAL_ADDED, {
+        meal_id: meal.id,
+        meal_name: meal.name,
+        meal_count: (mealCounts[meal.id] || 0) + 1,
+        total_selected: totalMealsSelected + 1,
+        total_needed: selectedPackage.meals,
+        funnel_step: 'meal_selection'
+      });
     }
   };
 
   const handleDecrement = (meal: Meal) => {
+    const currentCount = mealCounts[meal.id] || 0;
+    if (currentCount <= 0) return;
+    
     setMealCounts((prevCounts) => {
       const newCount = Math.max((prevCounts[meal.id] || 0) - 1, 0);
       if (newCount === 0) {
@@ -41,6 +67,16 @@ export const MealSelection: React.FC = () => {
         ...prevCounts,
         [meal.id]: newCount,
       };
+    });
+    
+    // Registrar eliminación de comida
+    trackEvent(EventTypes.MEAL_REMOVED, {
+      meal_id: meal.id,
+      meal_name: meal.name,
+      meal_count: currentCount - 1,
+      total_selected: totalMealsSelected - 1,
+      total_needed: selectedPackage.meals,
+      funnel_step: 'meal_selection'
     });
   };
 
@@ -53,6 +89,16 @@ export const MealSelection: React.FC = () => {
           selectedMeals.push({ meal, count: mealCounts[mealId] });
         }
       }
+      
+      // Registrar evento de selección de comidas completa
+      trackEvent(EventTypes.MEALS_SELECTED, {
+        total_meals: selectedPackage.meals,
+        package_id: selectedPackage.id,
+        package_name: selectedPackage.name,
+        selected_meal_ids: Object.keys(mealCounts),
+        funnel_step: 'meal_selection',
+        next_step: 'order_summary'
+      });
 
       navigate('/order-summary', {
         state: { package: selectedPackage, selectedMeals },
@@ -61,6 +107,14 @@ export const MealSelection: React.FC = () => {
   };
 
   const handleBack = () => {
+    // Registrar regreso a la selección de paquetes
+    trackEvent(EventTypes.BUTTON_CLICK, {
+      button: 'back_to_package_selection',
+      current_step: 'meal_selection',
+      previous_step: 'package_selection',
+      total_selected_meals: totalMealsSelected
+    });
+    
     navigate(-1);
   };
 
@@ -151,7 +205,15 @@ export const MealSelection: React.FC = () => {
                 onIncrement={() => handleIncrement(meal)}
                 onDecrement={() => handleDecrement(meal)}
                 disabled={totalMealsSelected >= selectedPackage.meals && !(mealCounts[meal.id] > 0)}
-                onShowDetails={() => setSelectedMealDetails(meal)}
+                onShowDetails={() => {
+                  // Registrar visualización de detalles de comida
+                  trackEvent(EventTypes.MEAL_DETAILS_VIEW, {
+                    meal_id: meal.id,
+                    meal_name: meal.name,
+                    funnel_step: 'meal_selection'
+                  });
+                  setSelectedMealDetails(meal);
+                }}
               />
             ))}
           </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, AlertCircle, Lock } from 'lucide-react';
@@ -9,6 +9,7 @@ import { useDiscount } from '../hooks/useDiscount';
 import { supabase } from '../lib/supabase';
 import { DiscountSummary } from '../components/DiscountSummary';
 import { DiscountCodeInput } from '../components/DiscountCodeInput';
+import { trackEvent, EventTypes } from '../lib/analytics';
 
 interface OrderPayload {
   user_id: string;
@@ -39,6 +40,22 @@ export const PaymentPage: React.FC = () => {
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { processPayment, loading: paymentLoading, error: paymentError } = usePayment();
+  
+  // Tracking de vista de página de pago
+  useEffect(() => {
+    if (orderSummary) {
+      trackEvent(EventTypes.CHECKOUT_START, {
+        package_id: orderSummary.package?.id,
+        package_name: orderSummary.package?.name,
+        package_price: orderSummary.package?.price,
+        total_meals: orderSummary.selectedMeals?.length,
+        funnel_step: 'payment_page',
+        has_discount: !!discountDetails,
+        discount_code: discountDetails?.code || null,
+        discount_percentage: discountDetails?.discount_percentage || 0
+      });
+    }
+  }, [orderSummary, discountDetails]);
 
   // Calculate discounted total
   const subtotal = orderSummary.package.price || 0;
@@ -51,6 +68,18 @@ export const PaymentPage: React.FC = () => {
     try {
       setProcessing(true);
       setError(null);
+      
+      // Tracking de inicio de proceso de pago
+      trackEvent(EventTypes.PAYMENT_INITIATED, {
+        subtotal: subtotal,
+        discount_amount: discountAmount,
+        total: total,
+        has_discount: !!discountDetails,
+        discount_code: discountDetails?.code || null,
+        package_id: orderSummary.package?.id,
+        package_name: orderSummary.package?.name,
+        funnel_step: 'payment_initiated'
+      });
 
       let orderId = createdOrderId;
 
@@ -129,7 +158,25 @@ export const PaymentPage: React.FC = () => {
 
       // If mock payment, the hook will handle the navigation
       if (!result.mock && result.shortUrl) {
+        // Tracking de redirección a la pasarela de pago
+        trackEvent(EventTypes.PAYMENT_REDIRECT, {
+          order_id: orderId,
+          payment_method: 'tropipay',
+          total: total,
+          funnel_step: 'payment_redirect'
+        });
+        
         window.location.href = result.shortUrl;
+      } else if (result.mock) {
+        // Tracking de pago simulado (mock)
+        trackEvent(EventTypes.PAYMENT_COMPLETED, {
+          order_id: orderId,
+          payment_method: 'mock',
+          total: total,
+          has_discount: !!discountDetails,
+          discount_code: discountDetails?.code || null,
+          funnel_step: 'payment_completed'
+        });
       }
 
       // Discount code usage is now handled by the database trigger
@@ -138,8 +185,16 @@ export const PaymentPage: React.FC = () => {
 
     } catch (err: any) {
       console.error('Payment processing error:', err);
-      setError(err.message || 'Ha ocurrido un error al procesar el pago');
+      const errorMessage = err.message || 'Ha ocurrido un error al procesar el pago';
+      setError(errorMessage);
       setProcessing(false);
+      
+      // Tracking de error en el pago
+      trackEvent(EventTypes.PAYMENT_ERROR, {
+        error_message: errorMessage,
+        order_id: createdOrderId,
+        funnel_step: 'payment_error'
+      });
     }
   };
 
