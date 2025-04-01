@@ -11,7 +11,7 @@ interface OrderDelivery {
   id: string;
   scheduled_date: string;
   meals_count: number;
-  status: 'pending' | 'in_transit' | 'delivered' | 'failed';
+  status: 'pending' | 'in_transit' | 'delivered' | 'failed' | 'completed';
   delivered_at?: string;
   notes?: string;
 }
@@ -20,8 +20,8 @@ interface Order {
   id: string;
   created_at: string;
   package_data: PackageType;
-  meals: Meal[];
-  status: 'pending' | 'processing' | 'delivered';
+  meals: Array<Meal | { meal: Meal; count: number }>;
+  status: 'pending' | 'processing' | 'delivered' | 'completed';
   delivery_address_data: {
     recipient_name: string;
     address: string;
@@ -245,9 +245,21 @@ export const MyOrdersPage: React.FC = () => {
                               Comidas
                             </p>
                             <ul className="text-sm text-gray-600 mt-1">
-                              {order.meals.map((meal) => (
-                                <li key={meal.id}>{meal.name}</li>
-                              ))}
+                              {order.meals.map((mealItem) => {
+                                // Check if the meal item has the new structure with count
+                                if ('meal' in mealItem && 'count' in mealItem) {
+                                  const { meal, count } = mealItem;
+                                  return (
+                                    <li key={meal.id}>
+                                      {meal.name} {count > 1 ? `(${count})` : ''}
+                                    </li>
+                                  );
+                                } else {
+                                  // Handle the old structure (just a Meal object)
+                                  const meal = mealItem as Meal;
+                                  return <li key={meal.id}>{meal.name}</li>;
+                                }
+                              })}
                             </ul>
                           </div>
                         </div>

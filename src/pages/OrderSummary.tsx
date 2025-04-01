@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Stepper } from '../components/Stepper';
 import { Footer } from '../components/Footer';
@@ -15,13 +15,20 @@ export const OrderSummary: React.FC = () => {
   const { user } = useAuth();
   const { package: selectedPackage, selectedMeals } = location.state as {
     package: Package;
-    selectedMeals: Meal[];
+    selectedMeals: { meal: Meal; count: number }[];
   };
 
   const [personalNote, setPersonalNote] = useState('');
   const [showAddressModal, setShowAddressModal] = useState(false);
   const { addresses, addAddress, removeAddress, userInfo, saveUserInfo } = useAddresses();
   const [selectedAddress, setSelectedAddress] = useState<DeliveryAddress | null>(null);
+
+  // Automatically select the address if there's only one
+  useEffect(() => {
+    if (addresses.length === 1 && !selectedAddress) {
+      setSelectedAddress(addresses[0]);
+    }
+  }, [addresses, selectedAddress]);
 
   // Form state for user info (only used when not logged in)
   const [name, setName] = useState(userInfo?.name || '');
@@ -148,7 +155,7 @@ export const OrderSummary: React.FC = () => {
             <div className="mb-8">
               <h3 className="font-semibold mb-4">Comidas seleccionadas:</h3>
               <div className="space-y-4">
-                {selectedMeals.map((meal) => (
+                {selectedMeals.map(({ meal, count }) => (
                   <div
                     key={meal.id}
                     className="flex items-center gap-4 bg-gray-50 p-4 rounded-lg"
@@ -160,6 +167,7 @@ export const OrderSummary: React.FC = () => {
                     />
                     <div>
                       <p className="font-medium">{meal.name}</p>
+                      <p className="text-sm text-gray-600">Cantidad: {count}</p>
                       <p className="text-sm text-gray-600">{meal.description}</p>
                     </div>
                   </div>
@@ -188,7 +196,7 @@ export const OrderSummary: React.FC = () => {
                       onClick={() => setSelectedAddress(address)}
                       className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
                         selectedAddress?.id === address.id
-                          ? 'border-red-500 bg-red-50'
+                          ? 'border-blue-500 bg-blue-50' // Changed from red to blue
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >

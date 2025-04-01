@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
 import { Meal } from '../types';
-import { Info, Plus, Check } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface MealCardProps {
   meal: Meal;
-  selected: boolean;
-  onSelect: () => void;
+  count: number;
+  onIncrement: () => void;
+  onDecrement: () => void;
   disabled: boolean;
   onShowDetails: () => void;
 }
 
 export const MealCard: React.FC<MealCardProps> = ({
   meal,
-  selected,
-  onSelect,
+  count,
+  onIncrement,
+  onDecrement,
   disabled,
   onShowDetails,
 }) => {
@@ -39,23 +41,31 @@ export const MealCard: React.FC<MealCardProps> = ({
             <Info className="w-4 h-4" />
             <span className="text-sm">Ver detalle</span>
           </button>
-          <button
-            onClick={onSelect}
-            disabled={disabled && !selected}
-            className={`p-2 rounded-full transition-colors ${
-              selected
-                ? 'bg-red-500 text-white'
-                : disabled
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-red-100 text-red-500 hover:bg-red-500 hover:text-white'
-            }`}
-          >
-            {selected ? (
-              <Check className="w-5 h-5" />
-            ) : (
-              <Plus className="w-5 h-5" />
-            )}
-          </button>
+          <div className="flex items-center">
+            <button
+              onClick={onDecrement}
+              disabled={disabled || count === 0}
+              className={`p-2 rounded-full transition-colors ${
+                disabled || count === 0
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-red-100 text-red-500 hover:bg-red-500 hover:text-white'
+              }`}
+            >
+              -
+            </button>
+            <span className="mx-2">{count}</span>
+            <button
+              onClick={onIncrement}
+              disabled={disabled}
+              className={`p-2 rounded-full transition-colors ${
+                disabled
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-red-100 text-red-500 hover:bg-red-500 hover:text-white'
+              }`}
+            >
+              +
+            </button>
+          </div>
         </div>
       </div>
     </div>
