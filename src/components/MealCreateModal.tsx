@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { X, Plus, AlertCircle, ToggleLeft, ToggleRight } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Plus, AlertCircle, ToggleLeft, ToggleRight, Upload } from 'lucide-react';
+import { ImageCropper } from './ImageCropper';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 
@@ -13,6 +14,9 @@ export const MealCreateModal: React.FC<MealCreateModalProps> = ({ onClose, onSav
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [chefNote, setChefNote] = useState('');
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [allergens, setAllergens] = useState<string[]>([]);
@@ -213,15 +217,33 @@ export const MealCreateModal: React.FC<MealCreateModalProps> = ({ onClose, onSav
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              URL de la imagen
+              Imagen
             </label>
             <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              required
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    setSelectedImage(reader.result as string);
+                    setShowCropper(true);
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              className="hidden"
             />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent flex items-center justify-center gap-2"
+            >
+              <Upload className="w-5 h-5" />
+              {imageUrl ? 'Cambiar imagen' : 'Seleccionar imagen'}
+            </button>
             {imageUrl && (
               <img
                 src={imageUrl}
@@ -230,6 +252,46 @@ export const MealCreateModal: React.FC<MealCreateModalProps> = ({ onClose, onSav
               />
             )}
           </div>
+
+          {showCropper && selectedImage && (
+            <ImageCropper
+              src={selectedImage}
+              onCropComplete={async (blob) => {
+                try {
+                  setLoading(true);
+                  const fileExt = blob.type.split('/')[1];
+                  const fileName = `${generateSlug(name)}-${Date.now()}.${fileExt}`;
+                  const filePath = `meal-images/${fileName}`;
+
+                  // Upload to Supabase Storage
+                  const { data, error } = await supabase.storage
+                    .from('meal-images')
+                    .upload(filePath, blob);
+
+                  if (error) throw error;
+
+                  // Get public URL
+                  const { data: { publicUrl } } = supabase.storage
+                    .from('meal-images')
+                    .getPublicUrl(filePath);
+
+                  setImageUrl(publicUrl);
+                  setShowCropper(false);
+                  setSelectedImage(null);
+                } catch (err) {
+                  console.error('Error uploading image:', err);
+                  setError('Error al subir la imagen');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              onCancel={() => {
+                setShowCropper(false);
+                setSelectedImage(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
+            />
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
