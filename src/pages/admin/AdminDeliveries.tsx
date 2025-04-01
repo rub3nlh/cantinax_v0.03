@@ -77,6 +77,9 @@ export const AdminDeliveries: React.FC = () => {
     // Safely access delivery.id and check type before calling toLowerCase
     const deliveryIdMatch = typeof delivery.id === 'string' &&
                             delivery.id.toLowerCase().includes(searchTermLower);
+    // Safely access delivery.order_id and check type before calling toLowerCase
+    const orderIdMatch = typeof delivery.order_id === 'string' &&
+                         delivery.order_id.toLowerCase().includes(searchTermLower);
 
     // Status filter
     let statusMatch = true;
@@ -96,7 +99,7 @@ export const AdminDeliveries: React.FC = () => {
                   scheduledDate.getFullYear() === today.getFullYear();
     }
 
-    return (recipientNameMatch || deliveryIdMatch) && statusMatch && dateMatch;
+    return (recipientNameMatch || deliveryIdMatch || orderIdMatch) && statusMatch && dateMatch;
   });
 
   const totalPages = Math.ceil(filteredDeliveries.length / ITEMS_PER_PAGE);
@@ -159,7 +162,7 @@ export const AdminDeliveries: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Buscar por cliente o número de entrega..."
+              placeholder="Buscar por cliente, número de entrega u orden..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -204,6 +207,9 @@ export const AdminDeliveries: React.FC = () => {
                     </span>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium border ${STATUS_COLORS[delivery.status] ?? 'bg-gray-100 text-gray-800 border-gray-200'}`}>
                       {STATUS_LABELS[delivery.status] ?? delivery.status}
+                    </span>
+                    <span className="text-sm text-gray-500 ml-auto">
+                      Orden #{delivery.order_id?.slice(0, 8) ?? 'N/A'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-600">
