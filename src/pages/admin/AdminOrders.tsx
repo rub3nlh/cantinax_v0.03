@@ -52,10 +52,17 @@ export const AdminOrders: React.FC = () => {
     );
   };
 
-  const filteredOrders = orders.filter(order =>
-    order.delivery_address_data.recipient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOrders = orders.filter(order => {
+    const searchTermLower = searchTerm.toLowerCase();
+    // Safely access recipient_name and check if it's a string before calling toLowerCase
+    const recipientNameMatch = typeof order.delivery_address_data?.recipient_name === 'string' && 
+                               order.delivery_address_data.recipient_name.toLowerCase().includes(searchTermLower);
+    // Safely access order.id and check if it's a string before calling toLowerCase
+    const orderIdMatch = typeof order.id === 'string' && 
+                         order.id.toLowerCase().includes(searchTermLower);
+    
+    return recipientNameMatch || orderIdMatch;
+  });
 
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
   const paginatedOrders = filteredOrders.slice(

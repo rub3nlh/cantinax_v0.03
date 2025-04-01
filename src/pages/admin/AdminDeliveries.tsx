@@ -58,7 +58,8 @@ export const AdminDeliveries: React.FC = () => {
   const handleMealComplete = async (delivery: OrderDelivery, mealId: string) => {
     try {
       setUpdatingStatus(delivery.id);
-      await updateDeliveryStatus(delivery.id, 'in_progress', { id: mealId });
+      // Pass the meal ID in the expected format { id: mealId }
+      await updateDeliveryStatus(delivery.id, 'in_progress', { id: mealId }); 
     } catch (err) {
       console.error('Error marking meal as completed:', err);
     } finally {
@@ -66,10 +67,17 @@ export const AdminDeliveries: React.FC = () => {
     }
   };
 
-  const filteredDeliveries = deliveries.filter(delivery =>
-    delivery.orders.delivery_address_data.recipient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    delivery.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredDeliveries = deliveries.filter(delivery => {
+    const searchTermLower = searchTerm.toLowerCase();
+    // Safely access nested properties and check type before calling toLowerCase
+    const recipientNameMatch = typeof delivery.orders?.delivery_address_data?.recipient_name === 'string' &&
+                               delivery.orders.delivery_address_data.recipient_name.toLowerCase().includes(searchTermLower);
+    // Safely access delivery.id and check type before calling toLowerCase
+    const deliveryIdMatch = typeof delivery.id === 'string' &&
+                            delivery.id.toLowerCase().includes(searchTermLower);
+
+    return recipientNameMatch || deliveryIdMatch;
+  });
 
   const totalPages = Math.ceil(filteredDeliveries.length / ITEMS_PER_PAGE);
   const paginatedDeliveries = filteredDeliveries.slice(
@@ -78,14 +86,20 @@ export const AdminDeliveries: React.FC = () => {
   );
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('es', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric'
-    });
+    if (!date) return 'Fecha inválida'; // Handle potential null/undefined dates
+    try {
+      return new Date(date).toLocaleDateString('es', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric'
+      });
+    } catch (e) {
+      console.error("Error formatting date:", date, e);
+      return 'Fecha inválida';
+    }
   };
 
   if (loading) {
@@ -145,10 +159,10 @@ export const AdminDeliveries: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-4 mb-2">
                     <span className="text-sm text-gray-500">
-                      Entrega #{delivery.id.slice(0, 8)}
+                      Entrega #{delivery.id?.slice(0, 8) ?? 'N/A'} {/* Safe slice */}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${STATUS_COLORS[delivery.status]}`}>
-                      {STATUS_LABELS[delivery.status]}
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${STATUS_COLORS[delivery.status] ?? 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                      {STATUS_LABELS[delivery.status] ?? delivery.status}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-600">
@@ -202,7 +216,7 @@ export const AdminDeliveries: React.FC = () => {
                       <div>
                         <h4 className="font-medium mb-4">Comidas para esta entrega</h4>
                         <div className="space-y-4">
-                          {delivery.meals.map((meal) => (
+                          {delivery.meals?.map((meal) => ( // Safe map
                             <div
                               key={meal.id}
                               className={`flex items-center gap-4 p-4 rounded-lg border ${
@@ -217,8 +231,8 @@ export const AdminDeliveries: React.FC = () => {
                                 className="w-16 h-16 object-cover rounded-lg"
                               />
                               <div className="flex-1">
-                                <p className="font-medium">{meal.name}</p>
-                                <p className="text-sm text-gray-600">{meal.description}</p>
+                                <p className="font-medium">{meal.name ?? 'Nombre no disponible'}</p>
+                                <p className="text-sm text-gray-600">{meal.description ?? 'Descripción no disponible'}</p>
                               </div>
                               {delivery.status === 'in_progress' && meal.status === 'pending' && (
                                 <button
@@ -243,15 +257,16 @@ export const AdminDeliveries: React.FC = () => {
                       <div>
                         <h4 className="font-medium mb-4">Datos de entrega</h4>
                         <div className="bg-gray-50 p-4 rounded-lg">
-                          <p className="font-medium">{delivery.orders.delivery_address_data.recipient_name}</p>
-                          <p className="text-gray-600">{delivery.orders.delivery_address_data.phone}</p>
-                          <p className="text-gray-600">{delivery.orders.delivery_address_data.address}</p>
+                          {/* Safe navigation for nested properties */}
+                          <p className="font-medium">{delivery.orders?.delivery_address_data?.recipient_name ?? 'Nombre no disponible'}</p>
+                          <p className="text-gray-600">{delivery.orders?.delivery_address_data?.phone ?? 'Teléfono no disponible'}</p>
+                          <p className="text-gray-600">{delivery.orders?.delivery_address_data?.address ?? 'Dirección no disponible'}</p>
                           <p className="text-gray-600">
-                            {delivery.orders.delivery_address_data.municipality}, {delivery.orders.delivery_address_data.province}
+                            {delivery.orders?.delivery_address_data?.municipality ?? 'Municipio no disponible'}, {delivery.orders?.delivery_address_data?.province ?? 'Provincia no disponible'}
                           </p>
                         </div>
 
-                        {delivery.orders.personal_note && (
+                        {delivery.orders?.personal_note && (
                           <div className="mt-4">
                             <h4 className="font-medium mb-2">Nota personal</h4>
                             <p className="text-gray-600 italic">"{delivery.orders.personal_note}"</p>

@@ -31,6 +31,7 @@ export interface OrderSummary {
   selectedMeals: Meal[];
   personalNote: string;
   deliveryAddress: DeliveryAddress;
+  discount_code_id?: string | null; // Add discount code ID
 }
 
 export type PaymentMethod = 'card' | 'tropipay';

@@ -2,20 +2,48 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, AlertCircle, Lock } from 'lucide-react';
-import { OrderSummary, PaymentMethod } from '../types';
+import { OrderSummary, PaymentMethod, Package, Meal, DeliveryAddress } from '../types';
 import { usePayment } from '../hooks/usePayment';
 import { useAuth } from '../hooks/useAuth';
+import { useDiscount } from '../hooks/useDiscount';
 import { supabase } from '../lib/supabase';
+import { DiscountSummary } from '../components/DiscountSummary';
+import { DiscountCodeInput } from '../components/DiscountCodeInput';
+
+interface OrderPayload {
+  user_id: string;
+  package_id: string;
+  package_data: Package;
+  meals: Meal[];
+  delivery_address_id: string;
+  delivery_address_data: DeliveryAddress;
+  personal_note: string;
+  total: number;
+  discount_code_id?: string | null;
+}
 
 export const PaymentPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const {
+    appliedCode,
+    discountDetails,
+    isLoading: discountLoading,
+    error: discountError,
+    applyCode,
+    removeCode,
+  } = useDiscount();
   const orderSummary = location.state as OrderSummary;
   const [processing, setProcessing] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { processPayment, loading: paymentLoading, error: paymentError } = usePayment();
+
+  // Calculate discounted total
+  const subtotal = orderSummary.package.price || 0;
+  const discountAmount = discountDetails ? (subtotal * (discountDetails.discount_percentage / 100)) : 0;
+  const total = subtotal - discountAmount;
 
   const handlePayment = async () => {
     if (!user || processing) return;
@@ -25,29 +53,31 @@ export const PaymentPage: React.FC = () => {
       setError(null);
 
       let orderId = createdOrderId;
-      
+
       if (!orderId) {
         // Basic validation
         if (!orderSummary || !orderSummary.selectedMeals) {
           throw new Error('No hay comidas seleccionadas');
         }
 
-        // Prepare order data
-        const orderPayload = {
+        // Prepare order data with explicit type
+        const orderPayload: OrderPayload = {
           user_id: user.id,
           package_id: orderSummary.package.id,
           package_data: orderSummary.package,
           meals: orderSummary.selectedMeals,
           delivery_address_id: orderSummary.deliveryAddress.id,
           delivery_address_data: {
-            recipient_name: orderSummary.deliveryAddress.recipientName || '',
-            phone: orderSummary.deliveryAddress.phone || '',
-            address: orderSummary.deliveryAddress.address || '',
-            province: orderSummary.deliveryAddress.province || '',
-            municipality: orderSummary.deliveryAddress.municipality || ''
+            recipientName: orderSummary.deliveryAddress.recipientName,
+            phone: orderSummary.deliveryAddress.phone,
+            address: orderSummary.deliveryAddress.address,
+            province: orderSummary.deliveryAddress.province,
+            municipality: orderSummary.deliveryAddress.municipality,
+            id: orderSummary.deliveryAddress.id,
           },
           personal_note: orderSummary.personalNote || '',
-          total: orderSummary.package.price || 0
+          total: total, // Use the discounted total
+          discount_code_id: discountDetails?.id,
         };
 
         // Create order in Supabase
@@ -62,6 +92,11 @@ export const PaymentPage: React.FC = () => {
 
         orderId = createdOrder.id;
         setCreatedOrderId(orderId);
+      }
+
+      // Ensure orderId is set before proceeding to payment
+      if (!orderId) {
+        throw new Error("Order ID is missing after creation attempt.");
       }
 
       // Get user metadata for additional info
@@ -83,18 +118,24 @@ export const PaymentPage: React.FC = () => {
         orderId,
         reference: orderId,
         concept: `Pedido #${orderId.slice(0, 8)}`,
-        amount: (orderSummary.package.price || 0) * 100, // Convert to cents
+        amount: total * 100, // Use the discounted total, convert to cents
         currency: 'EUR',
         description: `${orderSummary.package.name} - ${orderSummary.selectedMeals.length} comidas`,
         urlSuccess: `${window.location.origin}/thank-you?order=${orderId}`,
         urlFailed: `${window.location.origin}/payment?order=${orderId}`,
-        client: clientData
+        client: clientData,
+        discountCodeId: discountDetails?.id // Pass discount code ID to payment processing
       });
 
       // If mock payment, the hook will handle the navigation
       if (!result.mock && result.shortUrl) {
         window.location.href = result.shortUrl;
       }
+
+      // Discount code usage is now handled by the database trigger
+      // 'trigger_create_discount_usage' on the 'orders' table.
+      // No client-side action needed here.
+
     } catch (err: any) {
       console.error('Payment processing error:', err);
       setError(err.message || 'Ha ocurrido un error al procesar el pago');
@@ -113,7 +154,7 @@ export const PaymentPage: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold text-center mb-8">Método de Pago</h1>
-          
+
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
             {(paymentError || error) && (
               <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
@@ -132,23 +173,53 @@ export const PaymentPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Discount Code Input */}
+            <DiscountCodeInput
+              onApplyCode={applyCode}
+              onRemoveCode={removeCode}
+              appliedCode={appliedCode}
+              isLoading={discountLoading}
+              error={discountError}
+            />
+
             <div className="mt-8 pt-6 border-t border-gray-200">
+              {/* Discount Summary */}
+              {discountDetails && (
+                <DiscountSummary
+                  code={discountDetails.code}
+                  discountPercentage={discountDetails.discount_percentage}
+                  discountAmount={discountAmount}
+                />
+              )}
+
+              <div className="flex justify-between items-center mb-6">
+                <span className="text-lg">Subtotal:</span>
+                <span className="text-2xl font-bold">${subtotal.toFixed(2)}</span>
+              </div>
+
+              {discountDetails && (
+                <div className="flex justify-between items-center mb-6">
+                  <span className="text-lg">Descuento:</span>
+                  <span className="text-2xl font-bold">-${discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between items-center mb-6">
                 <span className="text-lg">Total a pagar:</span>
-                <span className="text-2xl font-bold">${orderSummary.package.price}</span>
+                <span className="text-2xl font-bold">${total.toFixed(2)}</span>
               </div>
 
               <button
                 onClick={handlePayment}
-                disabled={processing}
+                disabled={processing || discountLoading}
                 className={`w-full py-4 rounded-xl text-lg font-semibold flex items-center justify-center gap-2 ${
-                  !processing
+                  !processing && !discountLoading
                     ? 'bg-red-500 text-white hover:bg-red-600'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >
                 <Lock className="w-5 h-5" />
-                {processing ? (
+                {processing || discountLoading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Procesando...
