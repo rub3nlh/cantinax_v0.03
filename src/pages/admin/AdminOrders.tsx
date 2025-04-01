@@ -43,6 +43,8 @@ export const AdminOrders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string | null>(null);
+  const [deliveryDateFilter, setDeliveryDateFilter] = useState<string | null>(null);
 
   const toggleOrderExpansion = (orderId: string) => {
     setExpandedOrders(prev =>
@@ -54,14 +56,28 @@ export const AdminOrders: React.FC = () => {
 
   const filteredOrders = orders.filter(order => {
     const searchTermLower = searchTerm.toLowerCase();
-    // Safely access recipient_name and check if it's a string before calling toLowerCase
-    const recipientNameMatch = typeof order.delivery_address_data?.recipient_name === 'string' && 
-                               order.delivery_address_data.recipient_name.toLowerCase().includes(searchTermLower);
-    // Safely access order.id and check if it's a string before calling toLowerCase
-    const orderIdMatch = typeof order.id === 'string' && 
-                         order.id.toLowerCase().includes(searchTermLower);
-    
-    return recipientNameMatch || orderIdMatch;
+    const recipientNameMatch = typeof order.delivery_address_data?.recipient_name === 'string' &&
+      order.delivery_address_data.recipient_name.toLowerCase().includes(searchTermLower);
+    const orderIdMatch = typeof order.id === 'string' &&
+      order.id.toLowerCase().includes(searchTermLower);
+
+    let paymentStatusMatch = true;
+    if (paymentStatusFilter) {
+      paymentStatusMatch = order.status === paymentStatusFilter;
+    }
+
+    let deliveryDateMatch = true;
+    if (deliveryDateFilter === 'today') {
+      deliveryDateMatch = order.deliveries.some(delivery => {
+        const scheduledDate = new Date(delivery.scheduled_date);
+        const today = new Date();
+        return scheduledDate.getDate() === today.getDate() &&
+          scheduledDate.getMonth() === today.getMonth() &&
+          scheduledDate.getFullYear() === today.getFullYear();
+      });
+    }
+
+    return (recipientNameMatch || orderIdMatch) && paymentStatusMatch && deliveryDateMatch;
   });
 
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
@@ -124,6 +140,21 @@ export const AdminOrders: React.FC = () => {
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
+        </div>
+
+        <div className="flex justify-start items-center gap-4 p-4 border-b border-gray-200">
+          <button
+            onClick={() => setPaymentStatusFilter(paymentStatusFilter === 'pending' ? null : 'pending')}
+            className={`px-4 py-2 rounded-lg border ${paymentStatusFilter === 'pending' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
+          >
+            Pendientes
+          </button>
+          <button
+            onClick={() => setDeliveryDateFilter(deliveryDateFilter === 'today' ? null : 'today')}
+            className={`px-4 py-2 rounded-lg border ${deliveryDateFilter === 'today' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
+          >
+            Entregas de Hoy
+          </button>
         </div>
 
         <div className="divide-y divide-gray-200">
@@ -231,6 +262,14 @@ export const AdminOrders: React.FC = () => {
                       </div>
 
                       <div>
+                        <h4 className="font-medium mb-4">Información del usuario</h4>
+                        <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                          <p className="font-medium">ID: {order.user_id}</p>
+                          {order.user && (
+                            <p className="text-gray-600">Email: {order.user.email}</p>
+                          )}
+                        </div>
+
                         <h4 className="font-medium mb-4">Datos de entrega</h4>
                         <div className="bg-gray-50 p-4 rounded-lg">
                           <p className="font-medium">{order.delivery_address_data.recipient_name}</p>

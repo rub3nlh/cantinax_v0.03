@@ -35,6 +35,8 @@ export const AdminDeliveries: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedDeliveries, setExpandedDeliveries] = useState<string[]>([]);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<string | null>(null);
 
   const toggleDeliveryExpansion = (deliveryId: string) => {
     setExpandedDeliveries(prev =>
@@ -76,7 +78,25 @@ export const AdminDeliveries: React.FC = () => {
     const deliveryIdMatch = typeof delivery.id === 'string' &&
                             delivery.id.toLowerCase().includes(searchTermLower);
 
-    return recipientNameMatch || deliveryIdMatch;
+    // Status filter
+    let statusMatch = true;
+    if (statusFilter === 'pending') {
+      statusMatch = delivery.status === 'pending';
+    } else if (statusFilter === 'ready') {
+      statusMatch = delivery.status === 'ready';
+    }
+
+    // Date filter
+    let dateMatch = true;
+    if (dateFilter === 'today') {
+      const scheduledDate = new Date(delivery.scheduled_date);
+      const today = new Date();
+      dateMatch = scheduledDate.getDate() === today.getDate() &&
+                  scheduledDate.getMonth() === today.getMonth() &&
+                  scheduledDate.getFullYear() === today.getFullYear();
+    }
+
+    return (recipientNameMatch || deliveryIdMatch) && statusMatch && dateMatch;
   });
 
   const totalPages = Math.ceil(filteredDeliveries.length / ITEMS_PER_PAGE);
@@ -145,6 +165,27 @@ export const AdminDeliveries: React.FC = () => {
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
+        </div>
+
+        <div className="flex justify-start items-center gap-4 p-4 border-b border-gray-200">
+          <button
+            onClick={() => setStatusFilter(statusFilter === 'pending' ? null : 'pending')}
+            className={`px-4 py-2 rounded-lg border ${statusFilter === 'pending' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
+          >
+            Entregas Pendientes
+          </button>
+          <button
+            onClick={() => setStatusFilter(statusFilter === 'ready' ? null : 'ready')}
+            className={`px-4 py-2 rounded-lg border ${statusFilter === 'ready' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
+          >
+            Listas para Entrega
+          </button>
+          <button
+            onClick={() => setDateFilter(dateFilter === 'today' ? null : 'today')}
+            className={`px-4 py-2 rounded-lg border ${dateFilter === 'today' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
+          >
+            Entregas de Hoy
+          </button>
         </div>
 
         <div className="divide-y divide-gray-200">

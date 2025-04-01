@@ -11,6 +11,12 @@ export interface OrderDelivery {
   meals: DeliveryMeal[];
 }
 
+export interface User {
+  id: string;
+  email: string;
+  // Add other user properties as needed
+}
+
 export interface OrderWithDetails {
   id: string;
   created_at: string;
@@ -32,6 +38,7 @@ export interface OrderWithDetails {
   total: number;
   user_id: string;
   deliveries: OrderDelivery[];
+  user?: User;
 }
 
 export function useOrders() {
@@ -92,14 +99,17 @@ export function useOrders() {
               if (mealsError) throw mealsError;
 
               // Transform meals data
-              const meals = mealsData?.map(meal => ({
-                id: meal.meals.id,
-                name: meal.meals.name,
-                description: meal.meals.description,
-                image: meal.meals.image_url,
-                status: meal.status,
-                completed_at: meal.completed_at
-              })) || [];
+              const meals = (mealsData || []).map(mealData => {
+                const mealInfo = mealData.meals as any;
+                return {
+                  id: mealInfo?.id || '',
+                  name: mealInfo?.name || '',
+                  description: mealInfo?.description || '',
+                  image: mealInfo?.image_url || '',
+                  status: mealData.status,
+                  completed_at: mealData.completed_at
+                };
+              });
 
               return {
                 ...delivery,
@@ -108,9 +118,21 @@ export function useOrders() {
             })
           );
 
+          // Get user for this order
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', order.user_id)
+            .single();
+
+          if (userError) {
+            console.error('Error fetching user:', userError);
+          }
+
           return {
             ...order,
-            deliveries: deliveriesWithMeals
+            deliveries: deliveriesWithMeals,
+            user: userData || null,
           };
         })
       );
