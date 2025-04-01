@@ -2,6 +2,13 @@ import { Package } from '../types';
 
 export const packages: Package[] = [
   {
+    id: 'custom',
+    name: 'Paquete personalizado',
+    description: 'Elige tu propio número de comidas y días de entrega',
+    meals: 0,
+    price: 0
+  },
+  {
     id: 'basic',
     name: 'Paquete Básico',
     meals: 3,

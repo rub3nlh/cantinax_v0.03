@@ -6,12 +6,14 @@ interface PackageCardProps {
   package: Package;
   selected: boolean;
   onSelect: (pkg: Package) => void;
+  customControls?: React.ReactNode;
 }
 
 export const PackageCard: React.FC<PackageCardProps> = ({
   package: pkg,
   selected,
   onSelect,
+  customControls,
 }) => {
   return (
     <motion.div
@@ -25,9 +27,17 @@ export const PackageCard: React.FC<PackageCardProps> = ({
       onClick={() => onSelect(pkg)}
     >
       <h3 className="text-xl font-bold mb-2">{pkg.name}</h3>
-      <p className="text-3xl font-bold mb-4">${pkg.price}</p>
+      <p className="text-3xl font-bold mb-4">
+        {pkg.id === 'custom' 
+          ? (pkg.price > 0 ? `$${pkg.price}` : 'Personalizado') 
+          : `$${pkg.price}`}
+      </p>
       <div className="mb-4">
-        <span className="text-lg">{pkg.meals} comidas</span>
+        <span className="text-lg">
+          {pkg.id === 'custom' 
+            ? (pkg.meals > 0 ? `${pkg.meals} comidas` : 'Elige cantidad')
+            : `${pkg.meals} comidas`}
+        </span>
       </div>
       <p className={`text-sm ${selected ? 'text-red-100' : 'text-gray-600'}`}>
         {pkg.description}
@@ -41,6 +51,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
       >
         {selected ? 'Seleccionado' : 'Seleccionar'}
       </button>
+      {customControls}
     </motion.div>
   );
 };

@@ -10,6 +10,32 @@
     - No changes to security model
 */
 
+-- First create the user if they don't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = 'dcfb3883-b154-4f39-8272-b4745014a692') THEN
+    INSERT INTO auth.users (
+      id,
+      aud,
+      role,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      created_at,
+      updated_at
+    ) VALUES (
+      'dcfb3883-b154-4f39-8272-b4745014a692',
+      'authenticated',
+      'authenticated',
+      'admin@example.com',
+      crypt('adminpassword', gen_salt('bf')),
+      NOW(),
+      NOW(),
+      NOW()
+    );
+  END IF;
+END $$;
+
 -- Insert the admin user with the correct user ID
 INSERT INTO staff_members (user_id, role)
 VALUES ('dcfb3883-b154-4f39-8272-b4745014a692', 'admin')
