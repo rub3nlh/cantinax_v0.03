@@ -18,6 +18,16 @@ let config: AnalyticsConfig = {
   enabled: process.env.NODE_ENV === 'production', // Por defecto solo activo en producción
 };
 
+// Safe function to check if a feature is available
+const safeCall = (fn: Function, ...args: any[]) => {
+  try {
+    return fn(...args);
+  } catch (error) {
+    console.error('[Analytics] Error calling function:', error);
+    return null;
+  }
+};
+
 /**
  * Inicializa los servicios de analytics
  */
@@ -26,38 +36,46 @@ export const initAnalytics = (options: Partial<AnalyticsConfig> = {}) => {
 
   // Inicializar Google Analytics (GA4)
   if (config.googleAnalyticsId) {
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${config.googleAnalyticsId}`;
-    document.head.appendChild(script);
+    try {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${config.googleAnalyticsId}`;
+      document.head.appendChild(script);
 
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function() {
-      window.dataLayer.push(arguments);
-    };
-    window.gtag('js', new Date());
-    window.gtag('config', config.googleAnalyticsId);
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function() {
+        window.dataLayer.push(arguments);
+      };
+      window.gtag('js', new Date());
+      window.gtag('config', config.googleAnalyticsId);
+    } catch (error) {
+      console.error('[Analytics] Error initializing Google Analytics:', error);
+    }
   }
 
   // Inicializar Amplitude
   if (config.amplitudeApiKey) {
-    (function(e,t){var n=e.amplitude||{_q:[],_iq:{}};var r=t.createElement("script");
-    r.type="text/javascript";
-    r.integrity="sha384-girahbTbYZ9tT03PWWj0mEVgyxtZoyDF9KVZdL+R53PP5wCY0PiVUKq0jeRlZ8Q2";
-    r.crossOrigin="anonymous";r.async=true;
-    r.src="https://cdn.amplitude.com/libs/amplitude-8.21.4-min.gz.js";
-    r.onload=function(){if(!e.amplitude.runQueuedFunctions){console.log("[Amplitude] Error: could not load SDK")}};
-    var s=t.getElementsByTagName("script")[0];s.parentNode.insertBefore(r,s);
-    function i(){this._q=[];return this}function o(e){
-    this._q.push([e]);return this}var a=["add","append","clearAll","prepend","set","setOnce","unset","preInsert","postInsert","remove"];
-    for(var c=0;c<a.length;c++){i.prototype[a[c]]=o(a[c])}n.Identify=i;function u(e){this._q=[];
-    return this}function l(e){this._q.push([e]);return this}var p=["setProductId","setQuantity","setPrice","setRevenueType","setEventProperties"];
-    for(var d=0;d<p.length;d++){u.prototype[p[d]]=l(p[d])}n.Revenue=u;
-    var v=["init","logEvent","logRevenue","setUserId","setUserProperties","setOptOut","setVersionName","setDomain","setDeviceId","enableTracking","setGlobalUserProperties","identify","clearUserProperties","setGroup","logRevenueV2","regenerateDeviceId","groupIdentify","onInit","logEventWithTimestamp","logEventWithGroups","setSessionId","resetSessionId","getDeviceId","getUserId","setMinTimeBetweenSessionsMillis","setEventUploadThreshold","setUseDynamicConfig","setServerZone","setServerUrl","sendEvents","setLibrary","setTransport"];
-    function f(e){function t(t){e[t]=function(){e._q.push([t].concat(Array.prototype.slice.call(arguments,0)))}}
-    for(var n=0;n<v.length;n++){t(v[n])}}f(n);n._q=[];e.amplitude=n})(window,document);
-    
-    window.amplitude.init(config.amplitudeApiKey);
+    try {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = "https://cdn.amplitude.com/libs/amplitude-8.21.4-min.gz.js";
+      
+      script.onload = function() {
+        try {
+          if (window.amplitude) {
+            window.amplitude.init(config.amplitudeApiKey);
+          } else {
+            console.error("[Amplitude] Error: window.amplitude is not defined");
+          }
+        } catch (error) {
+          console.error("[Amplitude] Error initializing:", error);
+        }
+      };
+      
+      document.head.appendChild(script);
+    } catch (error) {
+      console.error('[Analytics] Error loading Amplitude script:', error);
+    }
   }
 };
 
@@ -65,30 +83,38 @@ export const initAnalytics = (options: Partial<AnalyticsConfig> = {}) => {
 export const identifyUser = (user: User | null) => {
   if (!config.enabled || !user) return;
 
-  if (config.googleAnalyticsId) {
-    window.gtag('set', { user_id: user.id });
+  // Google Analytics
+  if (config.googleAnalyticsId && window.gtag) {
+    safeCall(() => window.gtag('set', { user_id: user.id }));
   }
 
-  if (config.amplitudeApiKey) {
-    window.amplitude.setUserId(user.id);
-    
-    // Configurar propiedades de usuario en Amplitude
-    const identify = new window.amplitude.Identify();
-    
-    if (user.email) {
-      identify.set('email', user.email);
-    }
-    
-    if (user.user_metadata) {
-      if (user.user_metadata.display_name) {
-        identify.set('name', user.user_metadata.display_name);
+  // Amplitude
+  if (config.amplitudeApiKey && window.amplitude) {
+    try {
+      safeCall(() => window.amplitude.setUserId(user.id));
+
+      // Solo intentar identificar si la función está disponible
+      if (window.amplitude.Identify) {
+        const identify = new window.amplitude.Identify();
+        
+        if (user.email) {
+          identify.set('email', user.email);
+        }
+        
+        if (user.user_metadata) {
+          if (user.user_metadata.display_name) {
+            identify.set('name', user.user_metadata.display_name);
+          }
+          if (user.user_metadata.province) {
+            identify.set('province', user.user_metadata.province);
+          }
+        }
+        
+        window.amplitude.identify(identify);
       }
-      if (user.user_metadata.province) {
-        identify.set('province', user.user_metadata.province);
-      }
+    } catch (error) {
+      console.error('[Analytics] Error identifying user in Amplitude:', error);
     }
-    
-    window.amplitude.identify(identify);
   }
 };
 
@@ -106,13 +132,13 @@ export const trackEvent = (eventName: string, data: EventData = {}) => {
   }
 
   // Google Analytics (GA4)
-  if (config.googleAnalyticsId) {
-    window.gtag('event', eventName, data);
+  if (config.googleAnalyticsId && window.gtag) {
+    safeCall(() => window.gtag('event', eventName, data));
   }
 
   // Amplitude
-  if (config.amplitudeApiKey) {
-    window.amplitude.logEvent(eventName, data);
+  if (config.amplitudeApiKey && window.amplitude && window.amplitude.logEvent) {
+    safeCall(() => window.amplitude.logEvent(eventName, data));
   }
 };
 

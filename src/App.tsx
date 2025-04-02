@@ -46,12 +46,22 @@ function App() {
 
   // Inicializar analytics al cargar la aplicación
   useEffect(() => {
-    // Inicializar con las claves de API (estas deberían venir de variables de entorno)
-    initAnalytics({
-      googleAnalyticsId: import.meta.env.VITE_GA_MEASUREMENT_ID,
-      amplitudeApiKey: import.meta.env.VITE_AMPLITUDE_API_KEY,
-      enabled: true, // Habilitar en todos los entornos para desarrollo y pruebas
-    });
+    try {
+      // Verificamos que las variables de entorno estén definidas
+      const googleAnalyticsId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+      const amplitudeApiKey = import.meta.env.VITE_AMPLITUDE_API_KEY;
+      
+      // Inicializar con las claves de API
+      initAnalytics({
+        googleAnalyticsId: googleAnalyticsId,
+        amplitudeApiKey: amplitudeApiKey,
+        enabled: true, // Habilitar en todos los entornos para desarrollo y pruebas
+      });
+      
+      console.log('Analytics initialized successfully');
+    } catch (error) {
+      console.error('Error initializing analytics:', error);
+    }
   }, []);
 
   // Identificar al usuario cuando está autenticado
