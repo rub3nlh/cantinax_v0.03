@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de Pedido</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #EF4444;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .header img {
+            max-width: 150px;
+        }
+        .content {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #EF4444;
+            margin-top: 0;
+        }
+        .order-details {
+            margin: 20px 0;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        .order-summary {
+            border-top: 1px solid #eee;
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+        .meal-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .meal-item:last-child {
+            border-bottom: none;
+        }
+        .total {
+            font-weight: bold;
+            margin-top: 15px;
+            text-align: right;
+        }
+        .delivery-dates {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f0f9ff;
+            border-radius: 8px;
+        }
+        .delivery-date {
+            padding: 5px 0;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #EF4444;
+            color: white;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #888;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            padding: 8px;
+        }
+        td {
+            padding: 8px;
+        }
+        .discount {
+            color: #EF4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="https://cantinaxl.com/logo.png" alt="CantinaXL Logo">
+    </div>
+    <div class="content">
+        <h1>¡Tu pedido está confirmado! 🎉</h1>
+        
+        <p>¡Hola {{ .CustomerName }}!</p>
+        
+        <p>¡Genial! Hemos recibido tu pago y tu pedido está confirmado. Aquí tienes todos los detalles:</p>
+        
+        <div class="order-details">
+            <h3>Detalles del pedido</h3>
+            <p><strong>Número de pedido:</strong> {{ .OrderID }}</p>
+            <p><strong>Fecha de compra:</strong> {{ .OrderDate }}</p>
+            <p><strong>Método de pago:</strong> {{ .PaymentMethod }}</p>
+            <p><strong>Dirección de entrega:</strong> {{ .DeliveryAddress }}</p>
+        </div>
+        
+        <div class="order-summary">
+            <h3>Resumen de tu pedido</h3>
+            
+            <table>
+                <tr>
+                    <th>Paquete</th>
+                    <th>Cantidad</th>
+                    <th>Precio</th>
+                </tr>
+                <tr>
+                    <td>{{ .PackageName }}</td>
+                    <td>{{ .PackageQuantity }}</td>
+                    <td>{{ .PackagePrice }}€</td>
+                </tr>
+            </table>
+            
+            <h4>Comidas seleccionadas:</h4>
+            <div class="meal-items">
+                {{ range .Meals }}
+                <div class="meal-item">
+                    <p><strong>{{ .Name }}</strong></p>
+                    <p>{{ .Description }}</p>
+                </div>
+                {{ end }}
+            </div>
+            
+            {{ if .DiscountCode }}
+            <p class="discount">
+                <strong>Código de descuento aplicado:</strong> {{ .DiscountCode }} (-{{ .DiscountAmount }}€)
+            </p>
+            {{ end }}
+            
+            <p class="total">Total: {{ .TotalAmount }}€</p>
+        </div>
+        
+        <div class="delivery-dates">
+            <h3>Fechas de entrega</h3>
+            <p>Tus comidas serán entregadas en las siguientes fechas:</p>
+            
+            {{ range .DeliveryDates }}
+            <div class="delivery-date">
+                <p><strong>{{ .Date }}:</strong> {{ .MealCount }} comidas</p>
+            </div>
+            {{ end }}
+        </div>
+        
+        <p>Te enviaremos un recordatorio antes de cada entrega. Puedes revisar y gestionar tu pedido en cualquier momento en tu cuenta.</p>
+        
+        <div style="text-align: center;">
+            <a href="{{ .OrderDetailsURL }}" class="btn">Ver mi pedido</a>
+        </div>
+        
+        <p>¡Gracias por confiar en CantinaXL!</p>
+        
+        <p><strong>El equipo de CantinaXL</strong></p>
+    </div>
+    <div class="footer">
+        <p>© 2025 CantinaXL - La comida que te mereces</p>
+        <p>Si necesitas ayuda, escríbenos a <a href="mailto:hola@cantinaxl.com">hola@cantinaxl.com</a></p>
+    </div>
+</body>
+</html>
