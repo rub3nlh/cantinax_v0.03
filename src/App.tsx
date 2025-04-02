@@ -8,6 +8,8 @@ import { PaymentPage } from './pages/PaymentPage';
 import { ThankYouPage } from './pages/ThankYouPage';
 import { SignupPage } from './pages/SignupPage';
 import { LoginPage } from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import { MyOrdersPage } from './pages/MyOrdersPage';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminPage } from './pages/admin/AdminPage';
@@ -18,7 +20,6 @@ import { ChefHat, User, LogIn, ChevronDown, ShoppingBag, Menu, X, Settings } fro
 import { useAuth } from './hooks/useAuth';
 import { useAdmin } from './hooks/useAdmin';
 import { UserAvatar } from './components/UserAvatar';
-import { DebugPanel } from './components/DebugPanel';
 import { AdminRoute } from './components/AdminRoute';
 import { initAnalytics, identifyUser, trackEvent, EventTypes } from './lib/analytics';
 
@@ -243,6 +244,8 @@ function App() {
             <Route path="/thank-you" element={<ThankYouPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/my-orders" element={<MyOrdersPage />} />
             <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
               <Route index element={<AdminPage />} />
@@ -253,8 +256,6 @@ function App() {
           </Routes>
         </main>
 
-        {/* Debug Panel */}
-        <DebugPanel />
       </div>
     </Router>
   );

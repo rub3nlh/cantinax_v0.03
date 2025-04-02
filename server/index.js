@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import paymentsRouter from './routes/payments.js';
 
 // Load environment variables
@@ -12,6 +13,7 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
 
 // Enhanced logging middleware
 app.use((req, res, next) => {
@@ -52,6 +54,11 @@ app.get('/health', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('\n[Server Error]:', err);
   res.status(500).json({ error: 'Internal server error' });
+});
+
+// Handle client-side routing - return index.html for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // Start server
