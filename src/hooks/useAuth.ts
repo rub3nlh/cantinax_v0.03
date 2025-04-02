@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
 
+declare global {
+  interface Window {
+    $crisp: any[];
+    CRISP_WEBSITE_ID: string;
+  }
+}
+
 interface SignUpData {
   name: string;
   phone: string;
@@ -108,6 +115,13 @@ export function useAuth() {
         throw error;
       }
 
+      // Set user data in Crisp
+      if (window.$crisp && data.user) {
+        window.$crisp.push(['set', 'user:email', data.user.email]);
+        window.$crisp.push(['set', 'user:nickname', data.user.user_metadata?.display_name || '']);
+        window.$crisp.push(['set', 'user:phone', data.user.user_metadata?.phone || '']);
+      }
+
       return data;
     } catch (error) {
       console.error('Error during sign in:', error);
@@ -119,6 +133,11 @@ export function useAuth() {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Reset user data in Crisp
+      if (window.$crisp) {
+        window.$crisp.push(['do', 'session:reset']);
+      }
     } catch (error) {
       console.error('Error during sign out:', error);
       throw error;
