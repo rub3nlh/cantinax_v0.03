@@ -1,5 +1,5 @@
 // analytics.ts - Sistema centralizado de tracking para CantinaX
-import { User } from '@supabase/supabase-js';
+import { User } from "@supabase/supabase-js";
 
 // Tipos para la configuración de analytics
 interface AnalyticsConfig {
@@ -15,7 +15,7 @@ export interface EventData {
 
 // Configuración global
 let config: AnalyticsConfig = {
-  enabled: process.env.NODE_ENV === 'production', // Por defecto solo activo en producción
+  enabled: process.env.NODE_ENV === "production", // Por defecto solo activo en producción
 };
 
 // Safe function to check if a feature is available
@@ -23,7 +23,7 @@ const safeCall = (fn: Function, ...args: any[]) => {
   try {
     return fn(...args);
   } catch (error) {
-    console.error('[Analytics] Error calling function:', error);
+    console.error("[Analytics] Error calling function:", error);
     return null;
   }
 };
@@ -37,30 +37,30 @@ export const initAnalytics = (options: Partial<AnalyticsConfig> = {}) => {
   // Inicializar Google Analytics (GA4)
   if (config.googleAnalyticsId) {
     try {
-      const script = document.createElement('script');
+      const script = document.createElement("script");
       script.async = true;
       script.src = `https://www.googletagmanager.com/gtag/js?id=${config.googleAnalyticsId}`;
       document.head.appendChild(script);
 
       window.dataLayer = window.dataLayer || [];
-      window.gtag = function() {
+      window.gtag = function () {
         window.dataLayer.push(arguments);
       };
-      window.gtag('js', new Date());
-      window.gtag('config', config.googleAnalyticsId);
+      window.gtag("js", new Date());
+      window.gtag("config", config.googleAnalyticsId);
     } catch (error) {
-      console.error('[Analytics] Error initializing Google Analytics:', error);
+      console.error("[Analytics] Error initializing Google Analytics:", error);
     }
   }
 
   // Inicializar Amplitude
   if (config.amplitudeApiKey) {
     try {
-      const script = document.createElement('script');
+      const script = document.createElement("script");
       script.async = true;
       script.src = "https://cdn.amplitude.com/libs/amplitude-8.21.4-min.gz.js";
-      
-      script.onload = function() {
+
+      script.onload = function () {
         try {
           if (window.amplitude) {
             window.amplitude.init(config.amplitudeApiKey);
@@ -71,10 +71,10 @@ export const initAnalytics = (options: Partial<AnalyticsConfig> = {}) => {
           console.error("[Amplitude] Error initializing:", error);
         }
       };
-      
+
       document.head.appendChild(script);
     } catch (error) {
-      console.error('[Analytics] Error loading Amplitude script:', error);
+      console.error("[Analytics] Error loading Amplitude script:", error);
     }
   }
 };
@@ -85,7 +85,7 @@ export const identifyUser = (user: User | null) => {
 
   // Google Analytics
   if (config.googleAnalyticsId && window.gtag) {
-    safeCall(() => window.gtag('set', { user_id: user.id }));
+    safeCall(() => window.gtag("set", { user_id: user.id }));
   }
 
   // Amplitude
@@ -96,24 +96,24 @@ export const identifyUser = (user: User | null) => {
       // Solo intentar identificar si la función está disponible
       if (window.amplitude.Identify) {
         const identify = new window.amplitude.Identify();
-        
+
         if (user.email) {
-          identify.set('email', user.email);
+          identify.set("email", user.email);
         }
-        
+
         if (user.user_metadata) {
           if (user.user_metadata.display_name) {
-            identify.set('name', user.user_metadata.display_name);
+            identify.set("name", user.user_metadata.display_name);
           }
           if (user.user_metadata.province) {
-            identify.set('province', user.user_metadata.province);
+            identify.set("province", user.user_metadata.province);
           }
         }
-        
+
         window.amplitude.identify(identify);
       }
     } catch (error) {
-      console.error('[Analytics] Error identifying user in Amplitude:', error);
+      console.error("[Analytics] Error identifying user in Amplitude:", error);
     }
   }
 };
@@ -125,15 +125,15 @@ export const identifyUser = (user: User | null) => {
  */
 export const trackEvent = (eventName: string, data: EventData = {}) => {
   if (!config.enabled) return;
-  
+
   // Registrar en la consola en desarrollo
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== "production") {
     console.log(`[Analytics] Event: ${eventName}`, data);
   }
 
   // Google Analytics (GA4)
   if (config.googleAnalyticsId && window.gtag) {
-    safeCall(() => window.gtag('event', eventName, data));
+    safeCall(() => window.gtag("event", eventName, data));
   }
 
   // Amplitude
@@ -145,38 +145,39 @@ export const trackEvent = (eventName: string, data: EventData = {}) => {
 // Tipos de eventos predefinidos para garantizar consistencia
 export const EventTypes = {
   // Eventos de navegación
-  PAGE_VIEW: 'page_view',
-  
+  PAGE_VIEW: "page_view",
+
   // Eventos de funnel de compra
-  PACKAGE_VIEW: 'package_view',
-  PACKAGE_SELECT: 'package_select',
-  MEAL_VIEW: 'meal_view',
-  MEAL_DETAILS_VIEW: 'meal_details_view',
-  MEAL_ADDED: 'meal_added',
-  MEAL_REMOVED: 'meal_removed',
-  MEALS_SELECTED: 'meals_selected',
-  CHECKOUT_START: 'checkout_start',
-  ADDRESS_ADDED: 'address_added',
-  ADDRESS_SELECTED: 'address_selected',
-  DISCOUNT_CODE_APPLIED: 'discount_code_applied',
-  PAYMENT_INITIATED: 'payment_initiated',
-  PAYMENT_COMPLETED: 'payment_completed',
-  PURCHASE_COMPLETED: 'purchase_completed',
-  
+  PACKAGE_VIEW: "package_view",
+  PACKAGE_SELECT: "package_select",
+  MEAL_VIEW: "meal_view",
+  MEAL_DETAILS_VIEW: "meal_details_view",
+  MEAL_ADDED: "meal_added",
+  MEAL_REMOVED: "meal_removed",
+  MEALS_SELECTED: "meals_selected",
+  CHECKOUT_START: "checkout_start",
+  ADDRESS_ADDED: "address_added",
+  ADDRESS_SELECTED: "address_selected",
+  DISCOUNT_CODE_APPLIED: "discount_code_applied",
+  PAYMENT_INITIATED: "payment_initiated",
+  PAYMENT_REDIRECT: "payment_redirect",
+  PAYMENT_COMPLETED: "payment_completed",
+  PURCHASE_COMPLETED: "purchase_completed",
+
   // Eventos de usuario
-  USER_SIGNUP: 'user_signup',
-  USER_LOGIN: 'user_login',
-  USER_LOGOUT: 'user_logout',
-  
+  USER_SIGNUP: "user_signup",
+  USER_LOGIN: "user_login",
+  USER_LOGOUT: "user_logout",
+
   // Eventos de interacción
-  BUTTON_CLICK: 'button_click',
-  FORM_SUBMIT: 'form_submit',
-  FILTER_APPLIED: 'filter_applied',
-  
+  BUTTON_CLICK: "button_click",
+  FORM_SUBMIT: "form_submit",
+  FILTER_APPLIED: "filter_applied",
+
   // Eventos de errores
-  ERROR_OCCURRED: 'error_occurred',
-  PAYMENT_ERROR: 'payment_error',
-  VALIDATION_ERROR: 'validation_error',
+  ERROR_OCCURRED: "error_occurred",
+  PAYMENT_ERROR: "payment_error",
+  VALIDATION_ERROR: "validation_error",
 };
 
 // Añadimos interfaces para definiciones globales

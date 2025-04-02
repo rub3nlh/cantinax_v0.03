@@ -218,9 +218,9 @@ export const PaymentPage: React.FC = () => {
               </div>
             )}
 
-            <div className="p-4 rounded-lg border-2 border-red-500 bg-red-50">
+<div className="p-4 rounded-lg border-2 border-blue-500 bg-blue-50">
               <div className="flex items-center gap-4">
-                <Wallet className="w-6 h-6 text-red-500" />
+                <Wallet className="w-6 h-6 text-blue-500" />
                 <div>
                   <h3 className="font-medium">TropiPay</h3>
                   <p className="text-sm text-gray-600">Transferencia instantánea con TropiPay</p>
