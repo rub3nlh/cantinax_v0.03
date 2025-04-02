@@ -1,0 +1,21 @@
+{
+  "name": "LaCantinaXL - Comida Cubana a Domicilio",
+  "short_name": "LaCantinaXL",
+  "description": "Mantén feliz a tu familia con sabrosas comidas cubanas para todos los días. Entrega a domicilio con los sabores auténticos de Cuba en toda España.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ef4444",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
