@@ -298,6 +298,17 @@ export function useOrderDeliveries(initialFilters: DeliveryFilters = { status: n
         updateData.delivered_at = new Date().toISOString();
       }
 
+      // First, get the order_id for this delivery
+      const { data: deliveryData, error: deliveryError } = await supabase
+        .from('order_deliveries')
+        .select('order_id')
+        .eq('id', deliveryId)
+        .single();
+
+      if (deliveryError) throw deliveryError;
+
+      const orderId = deliveryData.order_id;
+
       // Update delivery status
       const { error: updateError } = await supabase
         .from('order_deliveries')
@@ -335,6 +346,77 @@ export function useOrderDeliveries(initialFilters: DeliveryFilters = { status: n
             .eq('id', deliveryId);
 
           if (readyError) throw readyError;
+        }
+      }
+
+      // If marking as delivered, update the order status to completed
+      if (status === 'delivered') {
+        console.log(`Delivery ${deliveryId} marked as delivered for order ${orderId}`);
+        
+        try {
+          // First, check current order status
+          const { data: orderData, error: orderCheckError } = await supabase
+            .from('orders')
+            .select('status, id')
+            .eq('id', orderId)
+            .single();
+            
+          if (orderCheckError) {
+            console.error('Error checking order status:', orderCheckError);
+          } else {
+            console.log(`Current order status for order ${orderId}: ${orderData.status}`);
+            
+            // Get all deliveries for this order to check if all are delivered
+            const { data: orderDeliveries, error: orderDeliveriesError } = await supabase
+              .from('order_deliveries')
+              .select('id, status')
+              .eq('order_id', orderId);
+
+            if (orderDeliveriesError) {
+              console.error('Error fetching order deliveries:', orderDeliveriesError);
+            } else {
+              console.log('All deliveries for this order:', orderDeliveries);
+
+              // Check if all deliveries are now in 'delivered' status
+              const allDelivered = orderDeliveries && 
+                                  orderDeliveries.length > 0 && 
+                                  orderDeliveries.every(delivery => delivery.status === 'delivered');
+
+              console.log(`All deliveries delivered? ${allDelivered}`);
+
+              // If all deliveries are delivered, update the order status to 'completed'
+              if (allDelivered) {
+                console.log(`Attempting to update order ${orderId} status to completed`);
+                
+                // Try a direct update with a simpler query
+                const { data: updateResult, error: orderUpdateError } = await supabase
+                  .from('orders')
+                  .update({ status: 'completed' })
+                  .eq('id', orderId)
+                  .select();
+
+                if (orderUpdateError) {
+                  console.error('Error updating order status to completed:', orderUpdateError);
+                  
+                  // Try using the manual update function we created
+                  console.log('Trying manual update function...');
+                  const { data: manualUpdateResult, error: manualUpdateError } = await supabase.rpc('manual_update_order_status', {
+                    order_id: orderId
+                  });
+                  
+                  if (manualUpdateError) {
+                    console.error('Manual update failed:', manualUpdateError);
+                  } else {
+                    console.log('Manual update result:', manualUpdateResult);
+                  }
+                } else {
+                  console.log('Order update result:', updateResult);
+                }
+              }
+            }
+          }
+        } catch (updateError) {
+          console.error('Error in order status update process:', updateError);
         }
       }
 
