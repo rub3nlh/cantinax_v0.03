@@ -132,15 +132,25 @@ export const PaymentPage: React.FC = () => {
       const { data: { user: userData } } = await supabase.auth.getUser();
       const userMetadata = userData?.user_metadata || {};
 
-      // Prepare client data for TropiPay
+      // Prepare client data for TropiPay with validation
+      const recipientName = userMetadata.display_name || orderSummary.deliveryAddress.recipientName;
+      if (!recipientName) {
+        throw new Error('Por favor completa tu nombre en tu perfil o dirección de entrega');
+      }
+      
+      const phone = userMetadata.phone || orderSummary.deliveryAddress.phone;
+      if (!phone) {
+        throw new Error('Por favor proporciona un número de teléfono en tu perfil o dirección de entrega');
+      }
+
       const clientData = {
-        name: userMetadata.display_name?.split(' ')[0] || '',
-        lastName: userMetadata.display_name?.split(' ').slice(1).join(' ') || '',
-        phone: userMetadata.phone || '',
+        name: recipientName.split(' ')[0] || '',
+        lastName: recipientName.split(' ').slice(1).join(' ') || '',
+        phone: phone,
         email: user.email || '',
         address: orderSummary.deliveryAddress.address || '',
         countryId: 1, // Default to Spain
-        termsAndConditions: 'true'
+        termsAndConditions: true
       };
 
       const result = await processPayment('tropipay', {
