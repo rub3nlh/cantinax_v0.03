@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ChevronDown, ChevronLeft, ChevronRight, AlertCircle, Clock, CheckCircle, XCircle, Truck, Calendar } from 'lucide-react';
-import { useOrderDeliveries, OrderDelivery } from '../../hooks/useOrderDeliveries';
-
-const ITEMS_PER_PAGE = 10;
+import { useOrderDeliveries, OrderDelivery, DeliveryFilters } from '../../hooks/useOrderDeliveries';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -30,13 +28,85 @@ const STATUS_LABELS = {
 };
 
 export const AdminDeliveries: React.FC = () => {
-  const { deliveries, loading, error, updateDeliveryStatus } = useOrderDeliveries();
+  // Create initial filters object
+  const initialFilters: DeliveryFilters = {
+    status: null,
+    deliveryDate: null,
+    searchTerm: ''
+  };
+  
+  // Use the hook with filters
+  const { 
+    deliveries, 
+    loading, 
+    error, 
+    updateDeliveryStatus, 
+    currentPage, 
+    setCurrentPage, 
+    totalPages, 
+    totalCount,
+    updateFilters
+  } = useOrderDeliveries(initialFilters);
+  
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [expandedDeliveries, setExpandedDeliveries] = useState<string[]>([]);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<string | null>(null);
+  
+  // Reference for search timeout (debounce)
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  
+  // Handle search term changes with debounce
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
+    
+    // Clear previous timeout if exists
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+    
+    // Set new timeout to update filters after user stops typing
+    searchTimeout.current = setTimeout(() => {
+      updateFilters({
+        status: statusFilter,
+        deliveryDate: dateFilter,
+        searchTerm: newSearchTerm
+      });
+    }, 300); // 300ms debounce
+  };
+  
+  // Clean up timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
+  }, []);
+  
+  // Handle status filter changes
+  const handleStatusFilterChange = (status: string) => {
+    const newStatus = statusFilter === status ? null : status;
+    setStatusFilter(newStatus);
+    updateFilters({
+      status: newStatus,
+      deliveryDate: dateFilter,
+      searchTerm: searchTerm
+    });
+  };
+  
+  // Handle date filter changes
+  const handleDateFilterChange = () => {
+    const newDate = dateFilter === 'today' ? null : 'today';
+    setDateFilter(newDate);
+    updateFilters({
+      status: statusFilter,
+      deliveryDate: newDate,
+      searchTerm: searchTerm
+    });
+  };
 
   const toggleDeliveryExpansion = (deliveryId: string) => {
     setExpandedDeliveries(prev =>
@@ -68,45 +138,6 @@ export const AdminDeliveries: React.FC = () => {
       setUpdatingStatus(null);
     }
   };
-
-  const filteredDeliveries = deliveries.filter(delivery => {
-    const searchTermLower = searchTerm.toLowerCase();
-    // Safely access nested properties and check type before calling toLowerCase
-    const recipientNameMatch = typeof delivery.orders?.delivery_address_data?.recipient_name === 'string' &&
-                               delivery.orders.delivery_address_data.recipient_name.toLowerCase().includes(searchTermLower);
-    // Safely access delivery.id and check type before calling toLowerCase
-    const deliveryIdMatch = typeof delivery.id === 'string' &&
-                            delivery.id.toLowerCase().includes(searchTermLower);
-    // Safely access delivery.order_id and check type before calling toLowerCase
-    const orderIdMatch = typeof delivery.order_id === 'string' &&
-                         delivery.order_id.toLowerCase().includes(searchTermLower);
-
-    // Status filter
-    let statusMatch = true;
-    if (statusFilter === 'pending') {
-      statusMatch = delivery.status === 'pending';
-    } else if (statusFilter === 'ready') {
-      statusMatch = delivery.status === 'ready';
-    }
-
-    // Date filter
-    let dateMatch = true;
-    if (dateFilter === 'today') {
-      const scheduledDate = new Date(delivery.scheduled_date);
-      const today = new Date();
-      dateMatch = scheduledDate.getDate() === today.getDate() &&
-                  scheduledDate.getMonth() === today.getMonth() &&
-                  scheduledDate.getFullYear() === today.getFullYear();
-    }
-
-    return (recipientNameMatch || deliveryIdMatch || orderIdMatch) && statusMatch && dateMatch;
-  });
-
-  const totalPages = Math.ceil(filteredDeliveries.length / ITEMS_PER_PAGE);
-  const paginatedDeliveries = filteredDeliveries.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
 
   const formatDate = (date: string) => {
     if (!date) return 'Fecha inválida'; // Handle potential null/undefined dates
@@ -164,7 +195,7 @@ export const AdminDeliveries: React.FC = () => {
               type="text"
               placeholder="Buscar por cliente, número de entrega u orden..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
@@ -172,19 +203,19 @@ export const AdminDeliveries: React.FC = () => {
 
         <div className="flex justify-start items-center gap-4 p-4 border-b border-gray-200">
           <button
-            onClick={() => setStatusFilter(statusFilter === 'pending' ? null : 'pending')}
+            onClick={() => handleStatusFilterChange('pending')}
             className={`px-4 py-2 rounded-lg border ${statusFilter === 'pending' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
           >
             Entregas Pendientes
           </button>
           <button
-            onClick={() => setStatusFilter(statusFilter === 'ready' ? null : 'ready')}
+            onClick={() => handleStatusFilterChange('ready')}
             className={`px-4 py-2 rounded-lg border ${statusFilter === 'ready' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
           >
             Listas para Entrega
           </button>
           <button
-            onClick={() => setDateFilter(dateFilter === 'today' ? null : 'today')}
+            onClick={handleDateFilterChange}
             className={`px-4 py-2 rounded-lg border ${dateFilter === 'today' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
           >
             Entregas de Hoy
@@ -192,7 +223,7 @@ export const AdminDeliveries: React.FC = () => {
         </div>
 
         <div className="divide-y divide-gray-200">
-          {paginatedDeliveries.map((delivery) => (
+          {deliveries.map((delivery) => (
             <motion.div
               key={delivery.id}
               initial={{ opacity: 0 }}
@@ -305,7 +336,7 @@ export const AdminDeliveries: React.FC = () => {
                         <h4 className="font-medium mb-4">Datos de entrega</h4>
                         <div className="bg-gray-50 p-4 rounded-lg">
                           {/* Safe navigation for nested properties */}
-                          <p className="font-medium">{delivery.orders?.delivery_address_data?.recipient_name ?? 'Nombre no disponible'}</p>
+                          <p className="font-medium">{delivery.orders?.delivery_address_data?.recipientName ?? 'Nombre no disponible'}</p>
                           <p className="text-gray-600">{delivery.orders?.delivery_address_data?.phone ?? 'Teléfono no disponible'}</p>
                           <p className="text-gray-600">{delivery.orders?.delivery_address_data?.address ?? 'Dirección no disponible'}</p>
                           <p className="text-gray-600">
@@ -339,7 +370,11 @@ export const AdminDeliveries: React.FC = () => {
           <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-t border-gray-200">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700">
-                Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, filteredDeliveries.length)} de {filteredDeliveries.length} resultados
+                {totalCount > 0 ? (
+                  <>Mostrando {((currentPage - 1) * 10) + 1} a {Math.min(currentPage * 10, totalCount)} de {totalCount} resultados</>
+                ) : (
+                  <>No hay resultados</>
+                )}
               </span>
             </div>
             <div className="flex items-center gap-2">
