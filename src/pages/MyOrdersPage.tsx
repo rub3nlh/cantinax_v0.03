@@ -55,20 +55,32 @@ export const MyOrdersPage: React.FC = () => {
 
     const fetchOrders = async () => {
       try {
-        // First, get total count of orders
+        // Get order_ids with completed payments
+        const { data: completedPaymentOrders, error: paymentOrdersError } = await supabase
+          .from('payment_orders')
+          .select('order_id')
+          .eq('status', 'completed');
+
+        if (paymentOrdersError) throw paymentOrdersError;
+        
+        const orderIds = completedPaymentOrders.map(po => po.order_id);
+        
+        // Get total count of orders with completed payments
         const { count, error: countError } = await supabase
           .from('orders')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .in('id', orderIds);
 
         if (countError) throw countError;
         setTotalOrders(count || 0);
 
-        // Then fetch paginated orders
+        // Then fetch paginated orders with completed payments
         const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
           .select('*')
           .eq('user_id', user.id)
+          .in('id', orderIds)
           .order('created_at', { ascending: false })
           .range((currentPage - 1) * ORDERS_PER_PAGE, currentPage * ORDERS_PER_PAGE - 1);
 
