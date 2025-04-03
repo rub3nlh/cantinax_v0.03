@@ -55,32 +55,22 @@ export const MyOrdersPage: React.FC = () => {
 
     const fetchOrders = async () => {
       try {
-        // Get order_ids with completed payments
-        const { data: completedPaymentOrders, error: paymentOrdersError } = await supabase
-          .from('payment_orders')
-          .select('order_id')
-          .eq('status', 'completed');
-
-        if (paymentOrdersError) throw paymentOrdersError;
-        
-        const orderIds = completedPaymentOrders.map(po => po.order_id);
-        
-        // Get total count of orders with completed payments
+        // Get total count of orders with completed payments using a JOIN
         const { count, error: countError } = await supabase
           .from('orders')
-          .select('*', { count: 'exact', head: true })
+          .select('*, payment_orders!inner(*)', { count: 'exact', head: true })
           .eq('user_id', user.id)
-          .in('id', orderIds);
+          .eq('payment_orders.status', 'completed');
 
         if (countError) throw countError;
         setTotalOrders(count || 0);
 
-        // Then fetch paginated orders with completed payments
+        // Then fetch paginated orders with completed payments using a JOIN
         const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
-          .select('*')
+          .select('*, payment_orders!inner(*)')
           .eq('user_id', user.id)
-          .in('id', orderIds)
+          .eq('payment_orders.status', 'completed')
           .order('created_at', { ascending: false })
           .range((currentPage - 1) * ORDERS_PER_PAGE, currentPage * ORDERS_PER_PAGE - 1);
 

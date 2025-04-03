@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ChevronDown, ChevronLeft, ChevronRight, AlertCircle, Clock, CheckCircle, XCircle, Package, Calendar, Truck } from 'lucide-react';
-import { useOrders } from '../../hooks/useOrders';
+import { useOrders, OrderFilters } from '../../hooks/useOrders';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -39,12 +39,29 @@ const STATUS_LABELS = {
 };
 
 export const AdminOrders: React.FC = () => {
-  const { orders, loading, error } = useOrders();
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string | null>(null);
   const [deliveryDateFilter, setDeliveryDateFilter] = useState<string | null>(null);
+  
+  // Create initial filters object
+  const initialFilters: OrderFilters = {
+    paymentStatus: paymentStatusFilter,
+    deliveryDate: deliveryDateFilter,
+    searchTerm: searchTerm
+  };
+  
+  // Use the hook with filters
+  const { 
+    orders, 
+    loading, 
+    error, 
+    currentPage, 
+    setCurrentPage, 
+    totalPages, 
+    totalCount,
+    updateFilters
+  } = useOrders(initialFilters);
 
   const toggleOrderExpansion = (orderId: string) => {
     setExpandedOrders(prev =>
@@ -53,42 +70,73 @@ export const AdminOrders: React.FC = () => {
         : [...prev, orderId]
     );
   };
-
-  const filteredOrders = orders.filter(order => {
-    const searchTermLower = searchTerm.toLowerCase();
-    const recipientNameMatch = typeof order.delivery_address_data?.recipient_name === 'string' &&
-      order.delivery_address_data.recipient_name.toLowerCase().includes(searchTermLower);
-    const orderIdMatch = typeof order.id === 'string' &&
-      order.id.toLowerCase().includes(searchTermLower);
-
-    let paymentStatusMatch = true;
-    if (paymentStatusFilter) {
-      paymentStatusMatch = order.status === paymentStatusFilter;
+  
+  // Update filters when they change
+  const handlePaymentStatusFilterChange = () => {
+    const newStatus = paymentStatusFilter === 'pending' ? null : 'pending';
+    setPaymentStatusFilter(newStatus);
+    updateFilters({
+      paymentStatus: newStatus,
+      deliveryDate: deliveryDateFilter,
+      searchTerm: searchTerm
+    });
+  };
+  
+  const handleDeliveryDateFilterChange = () => {
+    const newDate = deliveryDateFilter === 'today' ? null : 'today';
+    setDeliveryDateFilter(newDate);
+    updateFilters({
+      paymentStatus: paymentStatusFilter,
+      deliveryDate: newDate,
+      searchTerm: searchTerm
+    });
+  };
+  
+  // Reference for search timeout (debounce)
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  
+  // Handle search term changes with debounce
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
+    
+    // Clear previous timeout if exists
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
     }
-
-    let deliveryDateMatch = true;
-    if (deliveryDateFilter === 'today') {
-      deliveryDateMatch = order.deliveries.some(delivery => {
-        const scheduledDate = new Date(delivery.scheduled_date);
-        const today = new Date();
-        return scheduledDate.getDate() === today.getDate() &&
-          scheduledDate.getMonth() === today.getMonth() &&
-          scheduledDate.getFullYear() === today.getFullYear();
+    
+    // Set new timeout to update filters after user stops typing
+    searchTimeout.current = setTimeout(() => {
+      updateFilters({
+        paymentStatus: paymentStatusFilter,
+        deliveryDate: deliveryDateFilter,
+        searchTerm: newSearchTerm
       });
-    }
-
-    return (recipientNameMatch || orderIdMatch) && paymentStatusMatch && deliveryDateMatch;
+    }, 300); // 300ms debounce
+  };
+  
+  // Clean up timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
+  }, []);
+  
+  // All orders are now filtered on the server
+  const paginatedOrders = orders;
+  
+  // Debug pagination values
+  console.log('Pagination debug:', { 
+    currentPage, 
+    totalPages, 
+    totalCount, 
+    ordersLength: orders.length
   });
-
-  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
-  const paginatedOrders = filteredOrders.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('es', {
-      weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -136,7 +184,7 @@ export const AdminOrders: React.FC = () => {
               type="text"
               placeholder="Buscar por cliente o número de orden..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
@@ -144,13 +192,13 @@ export const AdminOrders: React.FC = () => {
 
         <div className="flex justify-start items-center gap-4 p-4 border-b border-gray-200">
           <button
-            onClick={() => setPaymentStatusFilter(paymentStatusFilter === 'pending' ? null : 'pending')}
+            onClick={handlePaymentStatusFilterChange}
             className={`px-4 py-2 rounded-lg border ${paymentStatusFilter === 'pending' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
           >
             Pendientes
           </button>
           <button
-            onClick={() => setDeliveryDateFilter(deliveryDateFilter === 'today' ? null : 'today')}
+            onClick={handleDeliveryDateFilterChange}
             className={`px-4 py-2 rounded-lg border ${deliveryDateFilter === 'today' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
           >
             Entregas de Hoy
@@ -304,13 +352,17 @@ export const AdminOrders: React.FC = () => {
           ))}
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-t border-gray-200">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700">
-                Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, filteredOrders.length)} de {filteredOrders.length} resultados
-              </span>
-            </div>
+        <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-t border-gray-200">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700">
+              {totalCount > 0 ? (
+                <>Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} de {totalCount} resultados</>
+              ) : (
+                <>No hay resultados</>
+              )}
+            </span>
+          </div>
+          {totalPages > 1 && (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
@@ -342,8 +394,8 @@ export const AdminOrders: React.FC = () => {
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
