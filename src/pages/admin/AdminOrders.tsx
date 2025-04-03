@@ -127,13 +127,7 @@ export const AdminOrders: React.FC = () => {
   // All orders are now filtered on the server
   const paginatedOrders = orders;
   
-  // Debug pagination values
-  console.log('Pagination debug:', { 
-    currentPage, 
-    totalPages, 
-    totalCount, 
-    ordersLength: orders.length
-  });
+  // No debug logs to avoid exposing sensitive data
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('es', {
@@ -312,7 +306,7 @@ export const AdminOrders: React.FC = () => {
                       <div>
                         <h4 className="font-medium mb-4">Información del usuario</h4>
                         <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                          <p className="font-medium">ID: {order.user_id}</p>
+                          <p className="font-medium">{order.user?.display_name || 'Usuario sin nombre'}</p>
                           {order.user && (
                             <p className="text-gray-600">Email: {order.user.email}</p>
                           )}
@@ -320,7 +314,7 @@ export const AdminOrders: React.FC = () => {
 
                         <h4 className="font-medium mb-4">Datos de entrega</h4>
                         <div className="bg-gray-50 p-4 rounded-lg">
-                          <p className="font-medium">{order.delivery_address_data.recipient_name}</p>
+                          <p className="font-medium">{order.delivery_address_data.recipientName}</p>
                           <p className="text-gray-600">{order.delivery_address_data.phone}</p>
                           <p className="text-gray-600">{order.delivery_address_data.address}</p>
                           <p className="text-gray-600">

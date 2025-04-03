@@ -14,6 +14,7 @@ export interface OrderDelivery {
 export interface User {
   id: string;
   email: string;
+  display_name?: string;
   // Add other user properties as needed
 }
 
@@ -28,7 +29,7 @@ export interface OrderWithDetails {
     price: number;
   };
   delivery_address_data: {
-    recipient_name: string;
+    recipientName: string;
     phone: string;
     address: string;
     province: string;
@@ -91,7 +92,7 @@ export function useOrders(initialFilters: OrderFilters = { paymentStatus: null, 
         // We'll fetch all orders and filter them client-side
       } else {
         // For non-UUID searches, search recipient name only
-        query = query.ilike('delivery_address_data->>recipient_name', '%' + searchTerm + '%');
+        query = query.ilike('delivery_address_data->>recipientName', '%' + searchTerm + '%');
       }
     }
     
@@ -105,7 +106,7 @@ export function useOrders(initialFilters: OrderFilters = { paymentStatus: null, 
         return;
       }
       
-      console.log('Total count fetched:', count);
+      // Set total count without logging
       setTotalCount(count || 0);
     } catch (err) {
       console.error('Error fetching total count:', err);
@@ -161,7 +162,7 @@ export function useOrders(initialFilters: OrderFilters = { paymentStatus: null, 
         // We'll fetch all orders and filter them client-side
       } else {
         // For non-UUID searches, search recipient name only
-        query = query.ilike('delivery_address_data->>recipient_name', '%' + searchTerm + '%');
+        query = query.ilike('delivery_address_data->>recipientName', '%' + searchTerm + '%');
       }
     }
     
@@ -187,7 +188,7 @@ export function useOrders(initialFilters: OrderFilters = { paymentStatus: null, 
           // This will be used for client-side filtering if the server-side search doesn't work
           (order as any).matchesSearch = 
             order.id.toLowerCase().includes(searchTerm) || 
-            (order.delivery_address_data?.recipient_name || '').toLowerCase().includes(searchTerm);
+            (order.delivery_address_data?.recipientName || '').toLowerCase().includes(searchTerm);
         }
         // Transform deliveries and meals
         const deliveriesWithMeals = (order.order_deliveries || []).map((delivery: any) => {
@@ -212,10 +213,78 @@ export function useOrders(initialFilters: OrderFilters = { paymentStatus: null, 
         return {
           ...order,
           deliveries: deliveriesWithMeals,
-          // We don't have a public.users table, so we set user to null
+          // Initialize user as null, we'll fetch it separately
           user: null
         };
       });
+
+      // No debug logs to avoid exposing sensitive data
+
+      // Fetch user data for each order
+      if (transformedOrders.length > 0) {
+        // Get unique user IDs
+        const userIds = [...new Set(transformedOrders.map(order => order.user_id))];
+        
+        // Fetch user data from auth.users using the get_users_by_ids function
+        const { data: userData, error: userError } = await supabase.rpc('get_users_by_ids', {
+          user_ids: userIds
+        });
+        
+        if (userError) {
+          console.error('Error fetching user data:', userError);
+          
+          // Fallback to using recipient name if the function fails
+          transformedOrders = transformedOrders.map(order => {
+            // Access recipientName correctly based on the data structure
+            const recipientName = order.delivery_address_data?.recipientName || 
+                                (typeof order.delivery_address_data === 'string' ? 
+                                  JSON.parse(order.delivery_address_data)?.recipientName : null);
+            
+            const user: User = {
+              id: order.user_id,
+              email: order.user_email || '', // Try to get email if available
+              display_name: recipientName || 'Usuario sin nombre'
+            };
+            
+            return {
+              ...order,
+              user
+            };
+          });
+        } else if (userData) {
+          // Create a map of user data by ID for quick lookup
+          const userMap = userData.reduce((map: Record<string, User>, user: User) => {
+            map[user.id] = user;
+            return map;
+          }, {} as Record<string, User>);
+          
+          // Add user data to each order
+          transformedOrders = transformedOrders.map(order => {
+            const user = userMap[order.user_id];
+            
+            // If user not found or display_name is empty, fallback to recipient name
+            if (!user || !user.display_name) {
+              const recipientName = order.delivery_address_data?.recipientName || 
+                                  (typeof order.delivery_address_data === 'string' ? 
+                                    JSON.parse(order.delivery_address_data)?.recipientName : null);
+              
+              return {
+                ...order,
+                user: {
+                  id: order.user_id,
+                  email: user?.email || order.user_email || '',
+                  display_name: recipientName || 'Usuario sin nombre'
+                }
+              };
+            }
+            
+            return {
+              ...order,
+              user
+            };
+          });
+        }
+      }
 
       // Single log for the entire operation
       await supabase.rpc('http_request_log', {
@@ -244,7 +313,7 @@ export function useOrders(initialFilters: OrderFilters = { paymentStatus: null, 
       // If we're searching with a partial UUID or server-side search didn't work, try client-side
       if (filters.searchTerm && filters.searchTerm.trim() !== '' && 
           (isPartialUUID || transformedOrders.length === 0)) {
-        console.log('Server-side search returned no results, trying client-side search');
+        // Server-side search returned no results, trying client-side search
         // Fetch all orders without search filter
         const { data: allOrdersData } = await supabase
           .from('orders')
@@ -271,7 +340,7 @@ export function useOrders(initialFilters: OrderFilters = { paymentStatus: null, 
           
         if (allOrdersData && allOrdersData.length > 0) {
           // Transform all orders
-          const allTransformedOrders = allOrdersData.map(order => {
+          let allTransformedOrders = allOrdersData.map(order => {
             const deliveriesWithMeals = (order.order_deliveries || []).map((delivery: any) => {
               const meals = (delivery.delivery_meals || []).map((mealData: any) => {
                 const mealInfo = mealData.meals as any;
@@ -294,15 +363,81 @@ export function useOrders(initialFilters: OrderFilters = { paymentStatus: null, 
             return {
               ...order,
               deliveries: deliveriesWithMeals,
-              user: null
+              user: null // Initialize user as null, we'll fetch it separately
             };
           });
+          
+          // Fetch user data for client-side search
+          if (allTransformedOrders.length > 0) {
+            // Get unique user IDs
+            const userIds = [...new Set(allTransformedOrders.map(order => order.user_id))];
+            
+            // Fetch user data from auth.users using the get_users_by_ids function
+            const { data: userData, error: userError } = await supabase.rpc('get_users_by_ids', {
+              user_ids: userIds
+            });
+            
+            if (userError) {
+              console.error('Error fetching user data for client-side search:', userError);
+              
+              // Fallback to using recipient name if the function fails
+              allTransformedOrders = allTransformedOrders.map(order => {
+                // Access recipientName correctly based on the data structure
+                const recipientName = order.delivery_address_data?.recipientName || 
+                                    (typeof order.delivery_address_data === 'string' ? 
+                                      JSON.parse(order.delivery_address_data)?.recipientName : null);
+                
+                const user: User = {
+                  id: order.user_id,
+                  email: order.user_email || '', // Try to get email if available
+                  display_name: recipientName || 'Usuario sin nombre'
+                };
+                
+                return {
+                  ...order,
+                  user
+                };
+              });
+            } else if (userData) {
+              // Create a map of user data by ID for quick lookup
+              const userMap = userData.reduce((map: Record<string, User>, user: User) => {
+                map[user.id] = user;
+                return map;
+              }, {} as Record<string, User>);
+              
+              // Add user data to each order
+              allTransformedOrders = allTransformedOrders.map(order => {
+                const user = userMap[order.user_id];
+                
+                // If user not found or display_name is empty, fallback to recipient name
+                if (!user || !user.display_name) {
+                  const recipientName = order.delivery_address_data?.recipientName || 
+                                      (typeof order.delivery_address_data === 'string' ? 
+                                        JSON.parse(order.delivery_address_data)?.recipientName : null);
+                  
+                  return {
+                    ...order,
+                    user: {
+                      id: order.user_id,
+                      email: user?.email || order.user_email || '',
+                      display_name: recipientName || 'Usuario sin nombre'
+                    }
+                  };
+                }
+                
+                return {
+                  ...order,
+                  user
+                };
+              });
+            }
+          }
           
           // Filter by search term
           const searchTerm = filters.searchTerm.trim().toLowerCase();
           transformedOrders = allTransformedOrders.filter(order => 
             order.id.toLowerCase().includes(searchTerm) || 
-            (order.delivery_address_data?.recipient_name || '').toLowerCase().includes(searchTerm)
+            (order.delivery_address_data?.recipientName || '').toLowerCase().includes(searchTerm)
           );
           
           // Apply pagination manually
