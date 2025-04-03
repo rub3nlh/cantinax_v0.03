@@ -50,87 +50,87 @@ router.post('/process-card', async (req, res) => {
 });
 
 // Crear link de pago de TropiPay
-// router.post('/create-payment-link', async (req, res) => {
-//   try {
-//     const {
-//       reference,
-//       concept,
-//       amount,
-//       currency,
-//       description,
-//       urlSuccess,
-//       urlFailed,
-//       urlNotification,
-//       client
-//     } = req.body;
+router.post('/create-payment-link', async (req, res) => {
+  try {
+    const {
+      reference,
+      concept,
+      amount,
+      currency,
+      description,
+      urlSuccess,
+      urlFailed,
+      urlNotification,
+      client
+    } = req.body;
 
-//     console.log('Creating TropiPay payment link:', {
-//       reference,
-//       concept,
-//       amount,
-//       currency
-//     });
+    console.log('Creating TropiPay payment link:', {
+      reference,
+      concept,
+      amount,
+      currency
+    });
 
-//     // Validación básica
-//     if (!reference || !concept || !amount || !currency) {
-//       return res.status(400).json({
-//         success: false,
-//         error: 'Faltan campos requeridos'
-//       });
-//     }
+    // Validación básica
+    if (!reference || !concept || !amount || !currency) {
+      return res.status(400).json({
+        success: false,
+        error: 'Faltan campos requeridos'
+      });
+    }
 
-//     // Prepare payload according to TropiPay docs
-//     const payload = {
-//       reference,
-//       concept,
-//       description,
-//       currency,
-//       amount: Math.round(amount), // TropiPay expects amount in cents
-//       lang: 'es',
-//       urlSuccess,
-//       urlFailed,
-//       urlNotification,
-//       client: client ? {
-//         name: client.name,
-//         lastName: client.lastName,
-//         address: client.address,
-//         phone: client.phone,
-//         email: client.email,
-//         countryId: client.countryId || 1, // Default to Spain
-//         termsAndConditions: true
-//       } : undefined,
-//       directPayment: true,
-//       favorite:false,
-//       singleUse: true,
-//       reasonId: 4, // Service payment
-//       expirationDays: 1
-//     };
+    // Prepare payload according to TropiPay docs
+    const payload = {
+      reference,
+      concept,
+      description,
+      currency,
+      amount: Math.round(amount), // TropiPay expects amount in cents
+      lang: 'es',
+      urlSuccess,
+      urlFailed,
+      urlNotification,
+      client: client ? {
+        name: client.name,
+        lastName: client.lastName,
+        address: client.address,
+        phone: client.phone,
+        email: client.email,
+        countryIso: client.countryIso, // Use countryIso for TropiPay API
+        termsAndConditions: true
+      } : undefined,
+      directPayment: true,
+      favorite:false,
+      singleUse: true,
+      reasonId: 4, // Service payment
+      expirationDays: 1
+    };
 
-//     // Log environment variables for debugging
-//     console.log('Environment:', {
-//       NODE_ENV: process.env.NODE_ENV,
-//       TROPIPAY_CLIENT_ID: process.env.TROPIPAY_CLIENT_ID ? 'Set' : 'Not set',
-//       TROPIPAY_CLIENT_SECRET: process.env.TROPIPAY_CLIENT_SECRET ? 'Set' : 'Not set'
-//     });
+    // Log environment variables for debugging
+    console.log('Environment:', {
+      NODE_ENV: process.env.NODE_ENV,
+      TROPIPAY_CLIENT_ID: process.env.TROPIPAY_CLIENT_ID ? 'Set' : 'Not set',
+      TROPIPAY_CLIENT_SECRET: process.env.TROPIPAY_CLIENT_SECRET ? 'Set' : 'Not set'
+    });
 
-//     // Call TropiPay API
-//     const result = await tropiPayService.createPaymentLink(payload);
+    // Call TropiPay API
+    const result = await tropiPayService.createPaymentLink(payload);
 
-//     // Send response with Cache-Control headers
-//     res.set({
-//       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-//       'Pragma': 'no-cache',
-//       'Expires': '0'
-//     });
+    // Send response with Cache-Control headers
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
 
-//     res.json(result);
-//   } catch (error) {
-//     console.error('Error creating TropiPay payment link:', error);
-//     res.status(500).json({
-//       success: false,
-//       error: 'Error creando link de pago'
-//     });
-//   }
-// });
+    res.json(result);
+  } catch (error) {
+    console.error('Error creating TropiPay payment link:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error creando link de pago'
+    });
+  }
+});
 
 export default router;

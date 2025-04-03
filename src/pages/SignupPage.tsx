@@ -5,6 +5,49 @@ import { Mail, Lock, AlertCircle, CheckCircle, User, Phone, ChevronDown, Search 
 import { Footer } from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
 
+const COUNTRIES_ISO = [
+  { code: 'ES', name: 'España' },
+  { code: 'CU', name: 'Cuba' },
+  { code: 'US', name: 'Estados Unidos' },
+  { code: 'DE', name: 'Alemania' },
+  { code: 'AR', name: 'Argentina' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'BE', name: 'Bélgica' },
+  { code: 'BR', name: 'Brasil' },
+  { code: 'CA', name: 'Canadá' },
+  { code: 'CL', name: 'Chile' },
+  { code: 'CN', name: 'China' },
+  { code: 'CO', name: 'Colombia' },
+  { code: 'KR', name: 'Corea del Sur' },
+  { code: 'DK', name: 'Dinamarca' },
+  { code: 'EC', name: 'Ecuador' },
+  { code: 'EG', name: 'Egipto' },
+  { code: 'FR', name: 'Francia' },
+  { code: 'GR', name: 'Grecia' },
+  { code: 'NL', name: 'Holanda' },
+  { code: 'HU', name: 'Hungría' },
+  { code: 'IN', name: 'India' },
+  { code: 'ID', name: 'Indonesia' },
+  { code: 'IE', name: 'Irlanda' },
+  { code: 'IT', name: 'Italia' },
+  { code: 'JP', name: 'Japón' },
+  { code: 'MX', name: 'México' },
+  { code: 'NO', name: 'Noruega' },
+  { code: 'NZ', name: 'Nueva Zelanda' },
+  { code: 'PA', name: 'Panamá' },
+  { code: 'PY', name: 'Paraguay' },
+  { code: 'PE', name: 'Perú' },
+  { code: 'PL', name: 'Polonia' },
+  { code: 'PT', name: 'Portugal' },
+  { code: 'GB', name: 'Reino Unido' },
+  { code: 'RU', name: 'Rusia' },
+  { code: 'SE', name: 'Suecia' },
+  { code: 'CH', name: 'Suiza' },
+  { code: 'TW', name: 'Taiwán' },
+  { code: 'UY', name: 'Uruguay' },
+  { code: 'VE', name: 'Venezuela' }
+].sort((a, b) => a.name.localeCompare(b.name));
+
 const COUNTRY_CODES = [
   { code: '+34', country: 'España' },
   { code: '+53', country: 'Cuba' },
@@ -52,20 +95,24 @@ export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const { signUp } = useAuth();
   const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [selectedCountryIso, setSelectedCountryIso] = useState(COUNTRIES_ISO[0]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [selectedCountryCode, setSelectedCountryCode] = useState(COUNTRY_CODES[0]);
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [showCountryList, setShowCountryList] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [showCountryCodeList, setShowCountryCodeList] = useState(false);
+  const [searchCountryCodeQuery, setSearchCountryCodeQuery] = useState('');
+  const [showCountryIsoList, setShowCountryIsoList] = useState(false);
+  const [searchCountryIsoQuery, setSearchCountryIsoQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
   // Load email from localStorage if available
   useEffect(() => {
-    const userInfo = localStorage.getItem('comida_zunzun_user_info');
+    const userInfo = localStorage.getItem('lacantinaxl_user_info');
     if (userInfo) {
       const { email, name } = JSON.parse(userInfo);
       if (email) setEmail(email);
@@ -83,8 +130,8 @@ export const SignupPage: React.FC = () => {
     setPhoneNumber(validatedNumber);
   };
 
-  const filteredCountries = COUNTRY_CODES.filter(country =>
-    country.country.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCountryCodes = COUNTRY_CODES.filter(country =>
+    country.country.toLowerCase().includes(searchCountryCodeQuery.toLowerCase())
   );
 
   const handleEmailSignup = async (e: React.FormEvent) => {
@@ -111,11 +158,18 @@ export const SignupPage: React.FC = () => {
       return;
     }
 
+    if (!address.trim()) {
+      setError('Por favor, ingresa tu dirección');
+      return;
+    }
+
     try {
       setIsLoading(true);
       const { needsEmailVerification } = await signUp(email, password, {
         name: name.trim(),
-        phone: `${selectedCountryCode.code}${phoneNumber.trim()}`
+        phone: `${selectedCountryCode.code}${phoneNumber.trim()}`,
+        address: address.trim(),
+        countryIso: selectedCountryIso.code
       });
       
       if (needsEmailVerification) {
@@ -133,12 +187,12 @@ export const SignupPage: React.FC = () => {
     }
   };
 
-  if (isSuccess) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <div className="flex-grow py-12">
-          <div className="container mx-auto px-4">
-            <div className="max-w-md mx-auto">
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="flex-grow py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-md mx-auto">
+            {isSuccess ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -152,211 +206,251 @@ export const SignupPage: React.FC = () => {
                   Te hemos enviado un correo electrónico a <strong>{email}</strong> con un enlace para verificar tu cuenta.
                 </p>
                 <p className="text-gray-600 mb-8">
-                  Por favor, haz clic en el enlace para activar tu cuenta y comenzar a usar ComidaZunZun.
+                  Por favor, haz clic en el enlace para activar tu cuenta y comenzar a usar LaCantinaXL.
                 </p>
-                <div className="space-y-4">
-                  <button
-                    onClick={() => navigate('/')}
-                    className="w-full py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors"
-                  >
-                    Volver al inicio
-                  </button>
-                  <button
-                    onClick={() => window.location.href = `mailto:${email}`}
-                    className="w-full py-3 border-2 border-gray-200 rounded-lg font-semibold hover:border-gray-300 transition-colors"
-                  >
-                    Abrir mi correo
-                  </button>
-                </div>
               </motion.div>
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="flex-grow py-12">
-        <div className="container mx-auto px-4">
-          <div className="max-w-md mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl shadow-lg p-8"
-            >
-              <h1 className="text-3xl font-bold text-center mb-8">Crear cuenta</h1>
-
-              <form onSubmit={handleEmailSignup} className="space-y-6">
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-xl shadow-lg p-8"
+              >
+                <h1 className="text-2xl font-bold mb-6 text-center">Crea tu cuenta</h1>
+                
                 {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                     <p className="text-sm text-red-600">{error}</p>
                   </div>
                 )}
+                
+                <form onSubmit={handleEmailSignup} className="space-y-4">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre completo
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="text"
+                        id="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        placeholder="Tu nombre completo"
+                        required
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre completo
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <div>
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                      Dirección
+                    </label>
                     <input
                       type="text"
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      placeholder="Tu nombre completo"
+                      id="address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      placeholder="Tu dirección completa"
                       required
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Correo electrónico
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="email"
-                      id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      placeholder="tu@email.com"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                    Teléfono
-                  </label>
-                  <div className="flex gap-2">
+                  <div>
+                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                      País
+                    </label>
                     <div className="relative">
                       <button
                         type="button"
-                        onClick={() => setShowCountryList(!showCountryList)}
-                        className="h-full px-3 py-2 rounded-lg border border-gray-300 flex items-center gap-2 hover:bg-gray-50"
+                        onClick={() => setShowCountryIsoList(!showCountryIsoList)}
+                        className="w-full px-3 py-2 rounded-lg border border-gray-300 flex items-center justify-between hover:bg-gray-50"
                       >
-                        <span>{selectedCountryCode.code}</span>
+                        <span>{selectedCountryIso.name}</span>
                         <ChevronDown className="w-4 h-4" />
                       </button>
-                      {showCountryList && (
-                        <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                      {showCountryIsoList && (
+                        <div className="absolute top-full left-0 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
                           <div className="px-3 py-2 border-b border-gray-200">
                             <div className="relative">
                               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                               <input
                                 type="text"
                                 placeholder="Buscar país..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                value={searchCountryIsoQuery}
+                                onChange={(e) => setSearchCountryIsoQuery(e.target.value)}
                                 className="w-full pl-8 pr-4 py-1 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
                               />
                             </div>
                           </div>
                           <div className="max-h-60 overflow-y-auto">
-                            {filteredCountries.map((country) => (
+                            {COUNTRIES_ISO.filter(country => 
+                              country.name.toLowerCase().includes(searchCountryIsoQuery.toLowerCase())
+                            ).map((country) => (
                               <button
-                                key={`${country.code}-${country.country}`}
+                                key={country.code}
                                 type="button"
-                                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between"
+                                className="w-full px-4 py-2 text-left hover:bg-gray-50"
                                 onClick={() => {
-                                  setSelectedCountryCode(country);
-                                  setShowCountryList(false);
-                                  setSearchQuery('');
+                                  setSelectedCountryIso(country);
+                                  setShowCountryIsoList(false);
+                                  setSearchCountryIsoQuery('');
                                 }}
                               >
-                                <span>{country.country}</span>
-                                <span className="text-gray-500">{country.code}</span>
+                                {country.name}
                               </button>
                             ))}
                           </div>
                         </div>
                       )}
                     </div>
-                    <div className="relative flex-1">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  </div>
+
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                      Correo electrónico
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <input
-                        type="tel"
-                        id="phone"
-                        value={phoneNumber}
-                        onChange={handlePhoneChange}
+                        type="email"
+                        id="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                        placeholder="Número de teléfono"
+                        placeholder="tu@email.com"
                         required
                       />
                     </div>
                   </div>
-                </div>
 
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                    Contraseña
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="password"
-                      id="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      placeholder="••••••••"
-                      required
-                      minLength={6}
-                    />
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                      Teléfono
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setShowCountryCodeList(!showCountryCodeList)}
+                          className="h-full px-3 py-2 rounded-lg border border-gray-300 flex items-center gap-2 hover:bg-gray-50"
+                        >
+                          <span>{selectedCountryCode.code}</span>
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        {showCountryCodeList && (
+                          <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                            <div className="px-3 py-2 border-b border-gray-200">
+                              <div className="relative">
+                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                <input
+                                  type="text"
+                                  placeholder="Buscar país..."
+                                  value={searchCountryCodeQuery}
+                                  onChange={(e) => setSearchCountryCodeQuery(e.target.value)}
+                                  className="w-full pl-8 pr-4 py-1 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
+                                />
+                              </div>
+                            </div>
+                            <div className="max-h-60 overflow-y-auto">
+                              {filteredCountryCodes.map((country) => (
+                                <button
+                                  key={`${country.code}-${country.country}`}
+                                  type="button"
+                                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between"
+                                  onClick={() => {
+                                    setSelectedCountryCode(country);
+                                    setShowCountryCodeList(false);
+                                    setSearchCountryCodeQuery('');
+                                  }}
+                                >
+                                  <span>{country.country}</span>
+                                  <span className="text-gray-500">{country.code}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="relative flex-1">
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input
+                          type="tel"
+                          id="phone"
+                          value={phoneNumber}
+                          onChange={handlePhoneChange}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                          placeholder="Número de teléfono"
+                          required
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirmar contraseña
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="password"
-                      id="confirmPassword"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      placeholder="••••••••"
-                      required
-                      minLength={6}
-                    />
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                      Contraseña
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="password"
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        placeholder="••••••••"
+                        required
+                        minLength={6}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors disabled:bg-gray-400 flex items-center justify-center gap-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Creando cuenta...
-                    </>
-                  ) : (
-                    'Crear cuenta'
-                  )}
-                </button>
-              </form>
+                  <div>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                      Confirmar contraseña
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="password"
+                        id="confirmPassword"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        placeholder="••••••••"
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                  </div>
 
-              <p className="mt-6 text-center text-sm text-gray-600">
-                ¿Ya tienes una cuenta?{' '}
-                <button onClick={() => navigate('/login')} className="text-red-500 hover:text-red-600 font-medium">
-                  Inicia sesión
-                </button>
-              </p>
-            </motion.div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors disabled:bg-gray-400 flex items-center justify-center gap-2"
+                  >
+                    {isLoading ? (
+                      <>
+                        <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Creando cuenta...
+                      </>
+                    ) : (
+                      'Crear cuenta'
+                    )}
+                  </button>
+                </form>
+
+                <p className="mt-6 text-center text-sm text-gray-600">
+                  ¿Ya tienes una cuenta?{' '}
+                  <button onClick={() => navigate('/login')} className="text-red-500 hover:text-red-600 font-medium">
+                    Inicia sesión
+                  </button>
+                </p>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>

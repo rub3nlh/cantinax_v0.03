@@ -52,7 +52,7 @@ router.post('/create-payment-link', requireAuth, async (req, res) => {
                 address: client.address,
                 phone: client.phone,
                 email: client.email,
-                countryId: client.countryId || 1, // Default to Spain
+                countryIso: client.countryIso || 'ES', // Default to Spain
                 termsAndConditions: true
             } : undefined,
             directPayment: true,

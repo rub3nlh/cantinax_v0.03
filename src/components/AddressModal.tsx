@@ -67,7 +67,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({ onClose, onSave }) =
   // Load user info from localStorage if available and not logged in
   useEffect(() => {
     if (!user) {
-      const userInfo = localStorage.getItem('comida_zunzun_user_info');
+      const userInfo = localStorage.getItem('lacantinaxl_user_info');
       if (userInfo) {
         const { name } = JSON.parse(userInfo);
         setRecipientName(name);

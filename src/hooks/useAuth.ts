@@ -12,6 +12,8 @@ declare global {
 interface SignUpData {
   name: string;
   phone: string;
+  address: string;
+  countryIso: string;
 }
 
 export function useAuth() {
@@ -72,6 +74,8 @@ export function useAuth() {
           data: {
             display_name: data?.name,
             phone: data?.phone,
+            address: data?.address,
+            country_iso: data?.countryIso,
             created_at: new Date().toISOString(),
           }
         }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, AlertCircle, Lock } from 'lucide-react';
 import { OrderSummary, PaymentMethod, Package, Meal, DeliveryAddress } from '../types';
@@ -26,6 +26,7 @@ interface OrderPayload {
 export const PaymentPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const {
     appliedCode,
@@ -35,15 +36,80 @@ export const PaymentPage: React.FC = () => {
     applyCode,
     removeCode,
   } = useDiscount();
-  const orderSummary = location.state as OrderSummary;
+  
+  // Check if we're coming from a failed payment redirect
+  const orderIdFromUrl = searchParams.get('order');
+  const isFromFailedPayment = !!orderIdFromUrl;
+  
+  const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(location.state as OrderSummary);
   const [processing, setProcessing] = useState(false);
-  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(orderIdFromUrl);
+  const [error, setError] = useState<string | null>(isFromFailedPayment ? 'Ha ocurrido un error con el pago. Por favor, intenta nuevamente.' : null);
+  const [loadingOrder, setLoadingOrder] = useState(isFromFailedPayment);
   const { processPayment, loading: paymentLoading, error: paymentError } = usePayment();
+  
+  // Fetch order details if we're coming from a failed payment redirect
+  useEffect(() => {
+    const fetchOrderDetails = async () => {
+      if (isFromFailedPayment && orderIdFromUrl) {
+        try {
+          setLoadingOrder(true);
+          
+          // Fetch order details from the database
+          const { data, error: fetchError } = await supabase
+            .from('orders')
+            .select('package_data, package_id, meals, delivery_address_data, personal_note, total, discount_code_id')
+            .eq('id', orderIdFromUrl)
+            .single();
+            
+          if (fetchError) {
+            throw new Error(`Error al obtener los detalles del pedido: ${fetchError.message}`);
+          }
+          
+          if (!data) {
+            throw new Error('No se encontró el pedido');
+          }
+          
+          // Reconstruct order summary from the fetched data
+          const reconstructedOrderSummary: OrderSummary = {
+            package: data.package_data,
+            selectedMeals: data.meals,
+            deliveryAddress: data.delivery_address_data,
+            personalNote: data.personal_note || '',
+          };
+          
+          setOrderSummary(reconstructedOrderSummary);
+          setCreatedOrderId(orderIdFromUrl);
+          
+          // If there's a discount code ID, fetch the discount details
+          if (data.discount_code_id) {
+            const { data: discountData } = await supabase
+              .from('discount_codes')
+              .select('*')
+              .eq('id', data.discount_code_id)
+              .single();
+              
+            if (discountData) {
+              applyCode(discountData.code);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching order details:', err);
+          setError(err instanceof Error ? err.message : 'Error al cargar los detalles del pedido');
+          // If we can't load the order, redirect to packages
+          navigate('/packages');
+        } finally {
+          setLoadingOrder(false);
+        }
+      }
+    };
+    
+    fetchOrderDetails();
+  }, [isFromFailedPayment, orderIdFromUrl, navigate, applyCode]);
   
   // Tracking de vista de página de pago
   useEffect(() => {
-    if (orderSummary) {
+    if (orderSummary && !loadingOrder) {
       trackEvent(EventTypes.CHECKOUT_START, {
         package_id: orderSummary.package?.id,
         package_name: orderSummary.package?.name,
@@ -52,13 +118,14 @@ export const PaymentPage: React.FC = () => {
         funnel_step: 'payment_page',
         has_discount: !!discountDetails,
         discount_code: discountDetails?.code || null,
-        discount_percentage: discountDetails?.discount_percentage || 0
+        discount_percentage: discountDetails?.discount_percentage || 0,
+        is_retry: isFromFailedPayment
       });
     }
-  }, [orderSummary, discountDetails]);
+  }, [orderSummary, discountDetails, loadingOrder, isFromFailedPayment]);
 
   // Calculate discounted total
-  const subtotal = orderSummary.package.price || 0;
+  const subtotal = orderSummary?.package?.price || 0;
   const discountAmount = discountDetails ? (subtotal * (discountDetails.discount_percentage / 100)) : 0;
   const total = subtotal - discountAmount;
 
@@ -70,6 +137,10 @@ export const PaymentPage: React.FC = () => {
       setError(null);
       
       // Tracking de inicio de proceso de pago
+      if (!orderSummary) {
+        throw new Error('No hay información del pedido');
+      }
+      
       trackEvent(EventTypes.PAYMENT_INITIATED, {
         subtotal: subtotal,
         discount_amount: discountAmount,
@@ -87,6 +158,14 @@ export const PaymentPage: React.FC = () => {
         // Basic validation
         if (!orderSummary || !orderSummary.selectedMeals) {
           throw new Error('No hay comidas seleccionadas');
+        }
+
+        if (!orderSummary.package) {
+          throw new Error('No hay paquete seleccionado');
+        }
+
+        if (!orderSummary.deliveryAddress) {
+          throw new Error('No hay dirección de entrega seleccionada');
         }
 
         // Prepare order data with explicit type
@@ -128,6 +207,11 @@ export const PaymentPage: React.FC = () => {
         throw new Error("Order ID is missing after creation attempt.");
       }
 
+      // Ensure orderSummary is not null at this point
+      if (!orderSummary) {
+        throw new Error('No hay información del pedido');
+      }
+
       // Get user metadata for additional info
       const { data: { user: userData } } = await supabase.auth.getUser();
       const userMetadata = userData?.user_metadata || {};
@@ -149,7 +233,7 @@ export const PaymentPage: React.FC = () => {
         phone: phone,
         email: user.email || '',
         address: orderSummary.deliveryAddress.address || '',
-        countryId: 1, // Default to Spain
+        countryIso: 'ES', // Default to Spain
         termsAndConditions: true
       };
 
@@ -208,10 +292,27 @@ export const PaymentPage: React.FC = () => {
     }
   };
 
-  // If there's no order summary data, redirect to packages
-  if (!orderSummary) {
+  // If there's no order summary data and we're not loading an order, redirect to packages
+  if (!orderSummary && !loadingOrder) {
     navigate('/packages');
     return null;
+  }
+  
+  // Show loading state while fetching order details
+  if (loadingOrder) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto">
+            <h1 className="text-3xl font-bold text-center mb-8">Método de Pago</h1>
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-8 flex justify-center items-center">
+              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mr-3"></div>
+              <p className="text-lg">Cargando detalles del pedido...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -224,7 +325,14 @@ export const PaymentPage: React.FC = () => {
             {(paymentError || error) && (
               <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-600">{paymentError || error}</p>
+                <div>
+                  <p className="text-sm text-red-600 font-medium">{paymentError || error}</p>
+                  {isFromFailedPayment && (
+                    <p className="text-sm text-red-600 mt-1">
+                      Puedes intentar procesar el pago nuevamente o elegir otro método de pago.
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
