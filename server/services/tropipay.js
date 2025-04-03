@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { Tropipay } from '@yosle/tropipayjs';
+import { Tropipay, ServerSideUtils } from '@yosle/tropipayjs';
 import { randomUUID } from 'crypto';
 
 // Cargar variables de entorno
@@ -28,8 +28,8 @@ class TropiPayService {
       });
     }
 
-    console.log('TropiPay Service inicializado en:', process.env.NODE_ENV, 
-                process.env.MOCK_PAYMENT === 'true' ? '(Mock Mode)' : '');
+    console.log('TropiPay Service inicializado en:', process.env.NODE_ENV,
+      process.env.MOCK_PAYMENT === 'true' ? '(Mock Mode)' : '');
 
     // Guardamos la instancia en la clase para asegurar el singleton
     TropiPayService.instance = this;
@@ -40,12 +40,12 @@ class TropiPayService {
       // If mock payment is enabled, return mock response
       if (process.env.MOCK_PAYMENT === 'true') {
         console.log('Using mock payment response');
-        
+
         // Generate random IDs using Node's crypto module
         const mockId = randomUUID();
         const mockUserId = randomUUID();
         const mockHash = Math.random().toString(36).substring(2, 10);
-        
+
         return {
           success: true,
           id: mockId,
@@ -98,7 +98,7 @@ class TropiPayService {
         lang: 'es',
         urlSuccess: paymentData.urlSuccess,
         urlFailed: paymentData.urlFailed,
-        urlNotification: paymentData.urlNotification,
+        urlNotification: process.env[`NOTIFICATION_URL_${process.env.NODE_ENV?.toUpperCase() || 'PRODUCTION'}`] || paymentData.urlNotification,
         client: paymentData.client,
         directPayment: true,
         favorite: false,
@@ -123,6 +123,18 @@ class TropiPayService {
       console.error('Error al crear el pago en TropiPay:', error);
       throw error;
     }
+  }
+
+  async verifyPayment(originalCurrencyAmount, bankOrderCode, signaturev2) {
+    // If mock payment is enabled, return mock verification
+    return ServerSideUtils.verifySignature(
+      this.tropipaySDK,
+      originalCurrencyAmount,
+      bankOrderCode,
+      signaturev2
+    );
+
+
   }
 }
 

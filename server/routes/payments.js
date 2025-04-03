@@ -1,9 +1,13 @@
 import express from 'express';
 const router = express.Router();
 import TropiPayService from '../services/tropipay.js';
+import { requireAuth } from '../middleware/auth.js';
+
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
+const urlNotification = process.env.NOTIFICATION_URL || `${SERVER_URL}/api/payments/webhook`;
 
 // Crear link de pago de TropiPay
-router.post('/create-payment-link', async (req, res) => {
+router.post('/create-payment-link', requireAuth, async (req, res) => {
     try {
         const {
             reference,
@@ -13,7 +17,6 @@ router.post('/create-payment-link', async (req, res) => {
             description,
             urlSuccess,
             urlFailed,
-            urlNotification,
             client
         } = req.body;
 
@@ -84,6 +87,48 @@ router.post('/create-payment-link', async (req, res) => {
             error: 'Error creando link de pago'
         });
     }
+});
+
+
+
+// Webhook de TropiPay
+router.post("/webhook", (req, res) => {
+    // Process the received data
+    console.log("Received webhook payload:", req.body);
+    const { status, data } = req.body;
+    if (!status || !data) {
+        return res.status(400).json({
+            message: "Invalid payload",
+        });
+    }
+
+    const isVerifiedPayload = TropiPayService.verifyPayment(
+        data.originalCurrencyAmount,
+        data.bankOrderCode,
+        data.signaturev2
+    );
+
+    if (!isVerifiedPayload) {
+        // maybe use a logger like winston
+        console.error("Invalid signature");
+
+        // if you provide
+        return res.status(400).json({
+            message: "Invalid signature",
+        });
+    }
+
+    try {
+        // Save and process asynchronously the payment here
+        // update database, etc. if you have some long blocking operations
+        // at this point. better use workers, queues, etc
+    } catch (err) {
+        // ...
+    } finally {
+        return res.status(200).send("Webhook received and processed successfully");
+    }
+
+    // Send a response ASAP
 });
 
 export default router;
