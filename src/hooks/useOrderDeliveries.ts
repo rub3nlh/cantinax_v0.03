@@ -41,7 +41,17 @@ export function useOrderDeliveries() {
       setLoading(true);
       setError(null);
 
-      // First get all deliveries
+      // First get deliveries for orders with completed payments
+      // Get order_ids with completed payments
+      const { data: completedPaymentOrders, error: paymentOrdersError } = await supabase
+        .from('payment_orders')
+        .select('order_id')
+        .eq('status', 'completed');
+      
+      if (paymentOrdersError) throw paymentOrdersError;
+      
+      // Get deliveries for those order IDs
+      const orderIds = completedPaymentOrders.map(po => po.order_id);
       const { data: deliveriesData, error: deliveriesError } = await supabase
         .from('order_deliveries')
         .select(`
@@ -51,6 +61,7 @@ export function useOrderDeliveries() {
             personal_note
           )
         `)
+        .in('order_id', orderIds)
         .order('scheduled_date', { ascending: true });
 
       if (deliveriesError) throw deliveriesError;

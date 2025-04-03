@@ -58,10 +58,21 @@ export function useOrders() {
         path: '/orders'
       });
 
-      // First get all orders
+      // First get orders with completed payments
+      // First get the order_ids with completed payments
+      const { data: completedPaymentOrders, error: paymentOrdersError } = await supabase
+        .from('payment_orders')
+        .select('order_id')
+        .eq('status', 'completed');
+      
+      if (paymentOrdersError) throw paymentOrdersError;
+      
+      // Then get orders with those IDs
+      const orderIds = completedPaymentOrders.map(po => po.order_id);
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
         .select('*')
+        .in('id', orderIds)
         .order('created_at', { ascending: false });
 
       if (ordersError) throw ordersError;
