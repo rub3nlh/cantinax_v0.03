@@ -207,7 +207,7 @@ export const LandingPage: React.FC = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-4">Nuestros Paquetes</h2>
           <p className="text-center text-xl text-red-500 font-semibold mb-16">
-            ¡Primer pedido con 20% OFF usando CUBANCARE20!
+            ¡Primer pedido con 20% OFF usando CANTINAXL20!
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-8 rounded-lg bg-white border border-gray-200">
@@ -378,10 +378,10 @@ export const LandingPage: React.FC = () => {
             <div className="space-y-4">
               <h3 className="text-2xl font-bold mb-4">Síguenos</h3>
               <div className="flex space-x-4">
-                <a href="#" className="hover:text-red-500">
+                <a href="https://www.instagram.com/lacantinaxl" className="hover:text-red-500" target="_blank">
                   <Instagram className="w-8 h-8" />
                 </a>
-                <a href="#" className="hover:text-red-500">
+                <a href="http://wa.me/+5350441098" className="hover:text-red-500" target="_blank">
                   <MessageCircle className="w-8 h-8" />
                 </a>
               </div>

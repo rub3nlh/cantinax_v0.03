@@ -340,8 +340,8 @@ export const PaymentPage: React.FC = () => {
               <div className="flex items-center gap-4">
                 <Wallet className="w-6 h-6 text-blue-500" />
                 <div>
-                  <h3 className="font-medium">TropiPay</h3>
-                  <p className="text-sm text-gray-600">Transferencia instantánea con TropiPay</p>
+                  <h3 className="font-medium">Tarjeta Visa/MasterCard o paga con Saldo Tropipay</h3>
+                  <p className="text-sm text-gray-600">Selecciona tu método de pago en la próxima pantalla</p>
                 </div>
               </div>
             </div>
