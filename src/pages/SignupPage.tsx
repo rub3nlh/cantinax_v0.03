@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, AlertCircle, CheckCircle, User, Phone, ChevronDown, Search } from 'lucide-react';
 import { Footer } from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
+import { useGeoLocation } from '../hooks/useGeoLocation';
 
 const COUNTRIES_ISO = [
   { code: 'ES', name: 'España' },
@@ -94,6 +95,7 @@ const COUNTRY_CODES = [
 export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const { signUp } = useAuth();
+  const { country_code, loading: geoLoading } = useGeoLocation();
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [selectedCountryIso, setSelectedCountryIso] = useState(COUNTRIES_ISO[0]);
@@ -119,6 +121,26 @@ export const SignupPage: React.FC = () => {
       if (name) setName(name);
     }
   }, []);
+
+  // Set country based on IP geolocation
+  useEffect(() => {
+    if (!geoLoading && country_code) {
+      // Find matching country in our list
+      const matchingCountry = COUNTRIES_ISO.find(c => c.code === country_code);
+      if (matchingCountry) {
+        setSelectedCountryIso(matchingCountry);
+        
+        // Find matching country code
+        const matchingCountryName = matchingCountry.name;
+        const matchingCode = COUNTRY_CODES.find(c => c.country === matchingCountryName);
+        if (matchingCode) {
+          setSelectedCountryCode(matchingCode);
+        }
+        
+        console.log(`🌍 Preselected country: ${matchingCountry.name}`);
+      }
+    }
+  }, [country_code, geoLoading]);
 
   const validatePhoneNumber = (value: string) => {
     // Only allow numbers
