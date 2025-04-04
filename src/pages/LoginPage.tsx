@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, AlertCircle, Apple } from 'lucide-react';
+import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { Footer } from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -35,30 +35,6 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      setIsLoading(true);
-      await signInWithGoogle();
-      // Navigate back to the return path with order data if it exists
-      navigate(returnTo, { state: orderData });
-    } catch (err) {
-      console.error('Error during Google login:', err);
-      setError('Error al iniciar sesión con Google');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAppleLogin = async () => {
-    try {
-      setIsLoading(true);
-      // Implement Apple login
-      setError('Inicio de sesión con Apple próximamente');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="flex-grow py-12">
@@ -71,34 +47,6 @@ export const LoginPage: React.FC = () => {
             >
               <h1 className="text-3xl font-bold text-center mb-8">Iniciar sesión</h1>
 
-              <div className="space-y-4 mb-8">
-                <button
-                  onClick={handleGoogleLogin}
-                  disabled={isLoading}
-                  className="w-full py-3 px-4 border border-gray-300 rounded-lg font-medium flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
-                  Continuar con Google
-                </button>
-
-                <button
-                  onClick={handleAppleLogin}
-                  disabled={isLoading}
-                  className="w-full py-3 px-4 bg-black text-white rounded-lg font-medium flex items-center justify-center gap-3 hover:bg-gray-900 transition-colors disabled:opacity-50"
-                >
-                  <Apple className="w-5 h-5" />
-                  Continuar con Apple
-                </button>
-              </div>
-
-              <div className="relative mb-8">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500">O</span>
-                </div>
-              </div>
 
               <form onSubmit={handleEmailLogin} className="space-y-6">
                 {error && (
