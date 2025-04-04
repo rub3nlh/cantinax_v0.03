@@ -4,6 +4,7 @@ import { ChefHat, Heart, Leaf, Truck, Clock, ShieldCheck, Instagram, MessageCirc
 import { packages } from '../data/packages';
 import { MealDetails } from '../components/MealDetails';
 import { FAQ } from '../components/FAQ';
+import { Footer } from '../components/Footer';
 import { Meal } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMeals } from '../hooks/useMeals';
@@ -169,7 +170,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-gray-50">
+      <section id="como-funciona" className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-16">¿Cómo funciona?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -203,7 +204,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-white">
+      <section id="paquetes" className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-4">Nuestros Paquetes</h2>
           <p className="text-center text-xl text-red-500 font-semibold mb-16">
@@ -248,7 +249,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      <section ref={menuRef} className="py-20 bg-gray-50">
+      <section id="menu" ref={menuRef} className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-16">Mira nuestro menú</h2>
           
@@ -352,43 +353,11 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      <FAQ />
+      <section id="faqs">
+        <FAQ />
+      </section>
 
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold mb-4">Contáctanos</h3>
-              <form className="space-y-4">
-                <input
-                  type="email"
-                  placeholder="Tu correo electrónico"
-                  className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700"
-                />
-                <textarea
-                  placeholder="Tu mensaje"
-                  className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700"
-                  rows={4}
-                />
-                <button className="bg-red-500 hover:bg-red-600 px-6 py-2 rounded">
-                  Enviar mensaje
-                </button>
-              </form>
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold mb-4">Síguenos</h3>
-              <div className="flex space-x-4">
-                <a href="https://www.instagram.com/lacantinaxl" className="hover:text-red-500" target="_blank">
-                  <Instagram className="w-8 h-8" />
-                </a>
-                <a href="http://wa.me/+5350441098" className="hover:text-red-500" target="_blank">
-                  <MessageCircle className="w-8 h-8" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       <AnimatePresence>
         {selectedMealDetails && (
