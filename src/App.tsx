@@ -11,6 +11,7 @@ import { LoginPage } from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import { MyOrdersPage } from './pages/MyOrdersPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminPage } from './pages/admin/AdminPage';
 import { AdminMeals } from './pages/admin/AdminMeals';
@@ -113,16 +114,23 @@ function App() {
                         className="flex items-center gap-2 text-gray-700 hover:text-red-500"
                       >
                         <UserAvatar 
-                          name={user.user_metadata?.display_name || user.email} 
+                          name={user.user_metadata?.display_name} 
                           size={32}
                         />
-                        <span>{user.email}</span>
+                        <span>{user.user_metadata?.display_name || user.email}</span>
                         <ChevronDown className={`w-4 h-4 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
                       </button>
                       {isMenuOpen && (
                         <div 
                           className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1"
                         >
+                          <Link
+                            to="/profile"
+                            onClick={closeAllMenus}
+                            className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 block"
+                          >
+                            Mi Perfil
+                          </Link>
                           <button
                             onClick={() => {
                               signOut();
@@ -175,10 +183,10 @@ function App() {
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-gray-700 px-2">
                       <UserAvatar 
-                        name={user.user_metadata?.display_name || user.email}
+                        name={user.user_metadata?.display_name}
                         size={32}
                       />
-                      <span className="text-sm">{user.email}</span>
+                      <span className="text-sm">{user.user_metadata?.display_name || user.email}</span>
                     </div>
                     <Link
                       to="/my-orders"
@@ -198,16 +206,24 @@ function App() {
                         <span>Admin</span>
                       </Link>
                     )}
-                    <button
-                      onClick={() => {
-                        signOut();
-                        closeAllMenus();
-                      }}
-                      className="w-full text-left text-gray-700 hover:text-red-500 px-2 py-2 flex items-center gap-2"
-                    >
-                      <LogIn className="w-5 h-5" />
-                      <span>Cerrar sesión</span>
-                    </button>
+                      <Link
+                        to="/profile"
+                        onClick={closeAllMenus}
+                        className="w-full text-left text-gray-700 hover:text-red-500 px-2 py-2 flex items-center gap-2"
+                      >
+                        <User className="w-5 h-5" />
+                        <span>Mi Perfil</span>
+                      </Link>
+                      <button
+                        onClick={() => {
+                          signOut();
+                          closeAllMenus();
+                        }}
+                        className="w-full text-left text-gray-700 hover:text-red-500 px-2 py-2 flex items-center gap-2"
+                      >
+                        <LogIn className="w-5 h-5" />
+                        <span>Cerrar sesión</span>
+                      </button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -247,6 +263,7 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/my-orders" element={<MyOrdersPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
               <Route index element={<AdminPage />} />
               <Route path="meals" element={<AdminMeals />} />

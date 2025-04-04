@@ -15,31 +15,48 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
 }) => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [error, setError] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const { generateAvatar } = useAvatar();
 
   useEffect(() => {
+    let isMounted = true;
+    
     const loadAvatar = async () => {
+      if (!name) return;
+      
+      setIsLoading(true);
       try {
-        if (name) {
-          const firstName = name.split(' ')[0];
-          const url = await generateAvatar(firstName);
+        const displayName = name.split(' ')[0] || 'User';
+        const url = await generateAvatar(displayName);
+        
+        if (isMounted) {
           if (url) {
             setAvatarUrl(url);
             setError(false);
           } else {
             setError(true);
           }
+          setIsLoading(false);
         }
       } catch (err) {
         console.error('Error loading avatar:', err);
-        setError(true);
+        if (isMounted) {
+          setError(true);
+          setIsLoading(false);
+        }
       }
     };
 
     loadAvatar();
-  }, [name]);
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [name, generateAvatar]);
 
-  if (!avatarUrl || error) {
+  // Show fallback UI during loading or on error
+  if (isLoading || !avatarUrl || error) {
     return (
       <div 
         className={`bg-gray-200 rounded-full flex items-center justify-center ${className}`}
@@ -53,7 +70,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   return (
     <img
       src={avatarUrl}
-      alt={`${name}'s avatar`}
+      alt={`${name || 'User'}'s avatar`}
       className={`rounded-full object-cover ${className}`}
       style={{ width: size, height: size }}
       onError={() => setError(true)}
