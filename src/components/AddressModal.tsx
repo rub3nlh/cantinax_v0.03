@@ -56,7 +56,9 @@ const COUNTRY_CODES = [
 export const AddressModal: React.FC<AddressModalProps> = ({ onClose, onSave }) => {
   const { user } = useAuth();
   const [recipientName, setRecipientName] = useState('');
-  const [selectedCountryCode, setSelectedCountryCode] = useState(COUNTRY_CODES[0]);
+  // Default to Cuba (+53) since all deliveries are currently only to Cuba
+  const cubaCountryCode = COUNTRY_CODES.find(country => country.code === '+53') || COUNTRY_CODES[0];
+  const [selectedCountryCode, setSelectedCountryCode] = useState(cubaCountryCode);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
   const [selectedProvince, setSelectedProvince] = useState<Province | null>(null);

@@ -182,7 +182,7 @@ export const OrderSummary: React.FC = () => {
             className="text-center mb-12"
           >
             <h1 className="text-4xl font-bold mb-4">
-              {user ? `¡Hola ${user.email}!` : 'Revisa tu pedido'}
+              {user ? `¡Hola ${user.user_metadata?.display_name || user.email}!` : 'Revisa tu pedido'}
             </h1>
             <p className="text-xl text-gray-600">
               {user 
