@@ -97,8 +97,6 @@ export const SignupPage: React.FC = () => {
   const { signUp } = useAuth();
   const { country_code, loading: geoLoading } = useGeoLocation();
   const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [selectedCountryIso, setSelectedCountryIso] = useState(COUNTRIES_ISO[0]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -106,8 +104,6 @@ export const SignupPage: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [showCountryCodeList, setShowCountryCodeList] = useState(false);
   const [searchCountryCodeQuery, setSearchCountryCodeQuery] = useState('');
-  const [showCountryIsoList, setShowCountryIsoList] = useState(false);
-  const [searchCountryIsoQuery, setSearchCountryIsoQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -128,8 +124,6 @@ export const SignupPage: React.FC = () => {
       // Find matching country in our list
       const matchingCountry = COUNTRIES_ISO.find(c => c.code === country_code);
       if (matchingCountry) {
-        setSelectedCountryIso(matchingCountry);
-        
         // Find matching country code
         const matchingCountryName = matchingCountry.name;
         const matchingCode = COUNTRY_CODES.find(c => c.country === matchingCountryName);
@@ -180,18 +174,11 @@ export const SignupPage: React.FC = () => {
       return;
     }
 
-    if (!address.trim()) {
-      setError('Por favor, ingresa tu dirección');
-      return;
-    }
-
     try {
       setIsLoading(true);
       const { needsEmailVerification } = await signUp(email, password, {
         name: name.trim(),
-        phone: `${selectedCountryCode.code}${phoneNumber.trim()}`,
-        address: address.trim(),
-        countryIso: selectedCountryIso.code
+        phone: `${selectedCountryCode.code}${phoneNumber.trim()}`
       });
       
       if (needsEmailVerification) {
@@ -262,71 +249,6 @@ export const SignupPage: React.FC = () => {
                         placeholder="Tu nombre completo"
                         required
                       />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                      Dirección
-                    </label>
-                    <input
-                      type="text"
-                      id="address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      placeholder="Tu dirección completa"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
-                      País
-                    </label>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setShowCountryIsoList(!showCountryIsoList)}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-300 flex items-center justify-between hover:bg-gray-50"
-                      >
-                        <span>{selectedCountryIso.name}</span>
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                      {showCountryIsoList && (
-                        <div className="absolute top-full left-0 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                          <div className="px-3 py-2 border-b border-gray-200">
-                            <div className="relative">
-                              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                              <input
-                                type="text"
-                                placeholder="Buscar país..."
-                                value={searchCountryIsoQuery}
-                                onChange={(e) => setSearchCountryIsoQuery(e.target.value)}
-                                className="w-full pl-8 pr-4 py-1 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
-                              />
-                            </div>
-                          </div>
-                          <div className="max-h-60 overflow-y-auto">
-                            {COUNTRIES_ISO.filter(country => 
-                              country.name.toLowerCase().includes(searchCountryIsoQuery.toLowerCase())
-                            ).map((country) => (
-                              <button
-                                key={country.code}
-                                type="button"
-                                className="w-full px-4 py-2 text-left hover:bg-gray-50"
-                                onClick={() => {
-                                  setSelectedCountryIso(country);
-                                  setShowCountryIsoList(false);
-                                  setSearchCountryIsoQuery('');
-                                }}
-                              >
-                                {country.name}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
 

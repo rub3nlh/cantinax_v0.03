@@ -8,11 +8,59 @@ import { Lock, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { AddressModal } from '../components/AddressModal';
 import { useAddresses } from '../hooks/useAddresses';
 import { useAuth } from '../hooks/useAuth';
+import { useProfile } from '../hooks/useProfile';
+import { useGeoLocation } from '../hooks/useGeoLocation';
+
+// Country list for the country selector
+const COUNTRIES_ISO = [
+  { code: 'ES', name: 'España' },
+  { code: 'CU', name: 'Cuba' },
+  { code: 'US', name: 'Estados Unidos' },
+  { code: 'DE', name: 'Alemania' },
+  { code: 'AR', name: 'Argentina' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'BE', name: 'Bélgica' },
+  { code: 'BR', name: 'Brasil' },
+  { code: 'CA', name: 'Canadá' },
+  { code: 'CL', name: 'Chile' },
+  { code: 'CN', name: 'China' },
+  { code: 'CO', name: 'Colombia' },
+  { code: 'KR', name: 'Corea del Sur' },
+  { code: 'DK', name: 'Dinamarca' },
+  { code: 'EC', name: 'Ecuador' },
+  { code: 'EG', name: 'Egipto' },
+  { code: 'FR', name: 'Francia' },
+  { code: 'GR', name: 'Grecia' },
+  { code: 'NL', name: 'Holanda' },
+  { code: 'HU', name: 'Hungría' },
+  { code: 'IN', name: 'India' },
+  { code: 'ID', name: 'Indonesia' },
+  { code: 'IE', name: 'Irlanda' },
+  { code: 'IT', name: 'Italia' },
+  { code: 'JP', name: 'Japón' },
+  { code: 'MX', name: 'México' },
+  { code: 'NO', name: 'Noruega' },
+  { code: 'NZ', name: 'Nueva Zelanda' },
+  { code: 'PA', name: 'Panamá' },
+  { code: 'PY', name: 'Paraguay' },
+  { code: 'PE', name: 'Perú' },
+  { code: 'PL', name: 'Polonia' },
+  { code: 'PT', name: 'Portugal' },
+  { code: 'GB', name: 'Reino Unido' },
+  { code: 'RU', name: 'Rusia' },
+  { code: 'SE', name: 'Suecia' },
+  { code: 'CH', name: 'Suiza' },
+  { code: 'TW', name: 'Taiwán' },
+  { code: 'UY', name: 'Uruguay' },
+  { code: 'VE', name: 'Venezuela' }
+].sort((a, b) => a.name.localeCompare(b.name));
 
 export const OrderSummary: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { updateProfile } = useProfile();
+  const { country_code, loading: geoLoading } = useGeoLocation();
   const { package: selectedPackage, selectedMeals } = location.state as {
     package: Package;
     selectedMeals: { meal: Meal; count: number }[];
@@ -22,6 +70,29 @@ export const OrderSummary: React.FC = () => {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const { addresses, addAddress, removeAddress, userInfo, saveUserInfo } = useAddresses();
   const [selectedAddress, setSelectedAddress] = useState<DeliveryAddress | null>(null);
+  
+  // State for address and country fields
+  const [userAddress, setUserAddress] = useState('');
+  const [userCountry, setUserCountry] = useState('');
+
+  // Form state for user info (only used when not logged in)
+  const [name, setName] = useState(userInfo?.name || '');
+  const [email, setEmail] = useState(userInfo?.email || '');
+
+  // Check if user needs to provide address and country
+  const needsAddressAndCountry = !!user && (!user.user_metadata || !user.user_metadata.address);
+
+  // Set country based on IP geolocation
+  useEffect(() => {
+    if (!geoLoading && country_code && needsAddressAndCountry) {
+      // Find matching country in our list
+      const matchingCountry = COUNTRIES_ISO.find(c => c.code === country_code);
+      if (matchingCountry) {
+        setUserCountry(matchingCountry.code);
+        console.log(`🌍 Preselected country: ${matchingCountry.name}`);
+      }
+    }
+  }, [country_code, geoLoading, needsAddressAndCountry]);
 
   // Automatically select the address if there's only one
   useEffect(() => {
@@ -30,18 +101,37 @@ export const OrderSummary: React.FC = () => {
     }
   }, [addresses, selectedAddress]);
 
-  // Form state for user info (only used when not logged in)
-  const [name, setName] = useState(userInfo?.name || '');
-  const [email, setEmail] = useState(userInfo?.email || '');
-
   const handleBack = () => {
     navigate(-1);
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     // If user is not logged in, require name and email
     if (!user && (!name || !email)) return;
     if (!selectedAddress) return;
+
+    // Check if address and country are required and provided
+    if (needsAddressAndCountry && (!userAddress || !userCountry)) {
+      return; // Don't proceed if address/country are required but not provided
+    }
+
+    // Save address and country to user profile immediately when "Pagar ahora" is clicked
+    // This ensures the data is saved even if payment fails or has an error
+    if (needsAddressAndCountry && userAddress && userCountry && user) {
+      try {
+        console.log('💾 Saving address and country to user profile...');
+        await updateProfile(user, {
+          name: user.user_metadata?.display_name || '',
+          phone: user.user_metadata?.phone || '',
+          address: userAddress,
+          countryIso: userCountry
+        });
+        console.log('✅ Address and country saved successfully');
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        // Continue with checkout even if profile update fails
+      }
+    }
 
     // Save user info if not logged in
     if (!user) {
@@ -245,6 +335,51 @@ export const OrderSummary: React.FC = () => {
               />
             </div>
 
+            {needsAddressAndCountry && (
+              <div className="mb-8">
+                <div className="flex items-center gap-3 mb-4 text-gray-700">
+                  <AlertCircle className="w-5 h-5 text-red-500" />
+                  <h3 className="font-medium">
+                    Datos tuyos que necesitamos para poder completar el pago
+                  </h3>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                      Dirección
+                    </label>
+                    <input
+                      type="text"
+                      id="address"
+                      value={userAddress}
+                      onChange={(e) => setUserAddress(e.target.value)}
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                      País
+                    </label>
+                    <select
+                      id="country"
+                      value={userCountry}
+                      onChange={(e) => setUserCountry(e.target.value)}
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">Selecciona un país</option>
+                      {COUNTRIES_ISO.map((country) => (
+                        <option key={country.code} value={country.code}>
+                          {country.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="border-t-2 border-gray-100 pt-6">
               <div className="flex justify-between items-center text-xl font-bold mb-6">
                 <span>Total:</span>
@@ -260,9 +395,15 @@ export const OrderSummary: React.FC = () => {
                 </button>
                 <button
                   onClick={handleCheckout}
-                  disabled={!selectedAddress || (!user && (!name || !email))}
+                  disabled={
+                    !selectedAddress || 
+                    (!user && (!name || !email)) || 
+                    (needsAddressAndCountry && (!userAddress || !userCountry))
+                  }
                   className={`px-8 py-4 rounded-xl text-lg font-semibold flex items-center gap-2 ${
-                    selectedAddress && (user || (name && email))
+                    selectedAddress && 
+                    (user || (name && email)) && 
+                    !(needsAddressAndCountry && (!userAddress || !userCountry))
                       ? 'bg-red-500 text-white hover:bg-red-600'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   }`}

@@ -12,8 +12,8 @@ declare global {
 interface SignUpData {
   name: string;
   phone: string;
-  address: string;
-  countryIso: string;
+  address?: string;
+  countryIso?: string;
 }
 
 export function useAuth() {

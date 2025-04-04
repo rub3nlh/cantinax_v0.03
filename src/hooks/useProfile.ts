@@ -6,6 +6,7 @@ interface ProfileData {
   name: string;
   phone: string;
   address: string;
+  countryIso?: string;
 }
 
 export function useProfile() {
@@ -21,7 +22,8 @@ export function useProfile() {
         data: {
           display_name: data.name,
           phone: data.phone,
-          address: data.address
+          address: data.address,
+          country_iso: data.countryIso
         }
       });
 
@@ -41,7 +43,8 @@ export function useProfile() {
     return {
       name: user.user_metadata?.display_name || '',
       phone: user.user_metadata?.phone || '',
-      address: user.user_metadata?.address || ''
+      address: user.user_metadata?.address || '',
+      countryIso: user.user_metadata?.country_iso || ''
     };
   };
 
