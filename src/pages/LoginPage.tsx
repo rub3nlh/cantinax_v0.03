@@ -122,7 +122,11 @@ export const LoginPage: React.FC = () => {
 
               <p className="mt-6 text-center text-sm text-gray-600">
                 ¿No tienes una cuenta?{' '}
-                <Link to="/signup" className="text-red-500 hover:text-red-600 font-medium">
+                <Link 
+                  to="/signup" 
+                  state={location.state} // Pass the same state to preserve order data
+                  className="text-red-500 hover:text-red-600 font-medium"
+                >
                   Regístrate
                 </Link>
               </p>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
+import { migrateGuestAddresses } from './useAddresses';
 
 declare global {
   interface Window {
@@ -95,6 +96,11 @@ export function useAuth() {
         return { user: signUpData.user, needsEmailVerification: true };
       }
 
+      // If user doesn't need email verification, migrate guest addresses
+      if (signUpData.user) {
+        await migrateGuestAddresses(signUpData.user.id);
+      }
+
       return { user: signUpData.user, needsEmailVerification: false };
     } catch (error) {
       console.error('Error during sign up:', error);
@@ -124,6 +130,11 @@ export function useAuth() {
         window.$crisp.push(['set', 'user:email', data.user.email]);
         window.$crisp.push(['set', 'user:nickname', data.user.user_metadata?.display_name || '']);
         window.$crisp.push(['set', 'user:phone', data.user.user_metadata?.phone || '']);
+      }
+
+      // Migrate guest addresses to Supabase after successful login
+      if (data.user) {
+        await migrateGuestAddresses(data.user.id);
       }
 
       return data;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, AlertCircle, CheckCircle, User, Phone, ChevronDown, Search } from 'lucide-react';
 import { Footer } from '../components/Footer';
@@ -94,8 +94,13 @@ const COUNTRY_CODES = [
 
 export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signUp } = useAuth();
   const { country_code, loading: geoLoading } = useGeoLocation();
+  
+  // Get return path and order data from location state
+  const returnTo = location.state?.returnTo || '/';
+  const orderData = location.state?.orderData;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -184,8 +189,8 @@ export const SignupPage: React.FC = () => {
       if (needsEmailVerification) {
         setIsSuccess(true);
       } else {
-        // User is already confirmed, redirect to home
-        navigate('/');
+        // User is already confirmed, redirect to return path with order data
+        navigate(returnTo, { state: orderData });
       }
     } catch (err) {
       console.error('Error during signup:', err);
@@ -389,7 +394,10 @@ export const SignupPage: React.FC = () => {
 
                 <p className="mt-6 text-center text-sm text-gray-600">
                   ¿Ya tienes una cuenta?{' '}
-                  <button onClick={() => navigate('/login')} className="text-red-500 hover:text-red-600 font-medium">
+                  <button 
+                    onClick={() => navigate('/login', { state: location.state })} // Pass the same state to preserve order data
+                    className="text-red-500 hover:text-red-600 font-medium"
+                  >
                     Inicia sesión
                   </button>
                 </p>

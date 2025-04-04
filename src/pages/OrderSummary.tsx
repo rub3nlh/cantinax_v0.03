@@ -106,8 +106,7 @@ export const OrderSummary: React.FC = () => {
   };
 
   const handleCheckout = async () => {
-    // If user is not logged in, require name and email
-    if (!user && (!name || !email)) return;
+    // Check if we have a selected address
     if (!selectedAddress) return;
 
     // Check if address and country are required and provided
@@ -136,17 +135,22 @@ export const OrderSummary: React.FC = () => {
     // Save user info if not logged in
     if (!user) {
       saveUserInfo({ name, email });
-      navigate('/login', {
-        state: {
-          returnTo: '/payment',
-          orderData: {
-            package: selectedPackage,
-            selectedMeals,
-            personalNote,
-            deliveryAddress: selectedAddress
-          }
+      
+      // Common order data to pass to login/signup
+      const orderStateData = {
+        returnTo: '/payment',
+        orderData: {
+          package: selectedPackage,
+          selectedMeals,
+          personalNote,
+          deliveryAddress: selectedAddress
         }
-      });
+      };
+      
+      // Show login/signup modal or navigate directly to login
+      // For simplicity, we'll navigate directly to login
+      // The user can then click on the signup link if they need to create an account
+      navigate('/login', { state: orderStateData });
       return;
     }
 
@@ -194,45 +198,6 @@ export const OrderSummary: React.FC = () => {
 
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
             <h2 className="text-2xl font-bold mb-6">Resumen del pedido</h2>
-            
-            {!user && (
-              <div className="mb-8">
-                <div className="flex items-center gap-3 mb-4 text-gray-700">
-                  <AlertCircle className="w-5 h-5 text-red-500" />
-                  <h3 className="font-medium">
-                    Necesitamos estos datos para notificarte de las entregas
-                  </h3>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Nombre completo
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Correo electrónico
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div className="mb-8">
               <h3 className="font-semibold mb-4">Paquete seleccionado:</h3>
@@ -397,12 +362,10 @@ export const OrderSummary: React.FC = () => {
                   onClick={handleCheckout}
                   disabled={
                     !selectedAddress || 
-                    (!user && (!name || !email)) || 
                     (needsAddressAndCountry && (!userAddress || !userCountry))
                   }
                   className={`px-8 py-4 rounded-xl text-lg font-semibold flex items-center gap-2 ${
                     selectedAddress && 
-                    (user || (name && email)) && 
                     !(needsAddressAndCountry && (!userAddress || !userCountry))
                       ? 'bg-red-500 text-white hover:bg-red-600'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'

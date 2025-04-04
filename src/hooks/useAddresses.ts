@@ -11,6 +11,44 @@ export interface UserInfo {
   email: string;
 }
 
+// Function to migrate guest addresses to Supabase after login/signup
+export async function migrateGuestAddresses(userId: string) {
+  try {
+    // Get addresses from localStorage
+    const savedAddresses = localStorage.getItem(STORAGE_KEY);
+    if (!savedAddresses) return;
+    
+    const addresses: DeliveryAddress[] = JSON.parse(savedAddresses);
+    if (addresses.length === 0) return;
+    
+    console.log(`🔄 Migrating ${addresses.length} guest addresses to Supabase`);
+    
+    // Transform addresses to Supabase format
+    const supabaseAddresses = addresses.map(addr => ({
+      id: addr.id,
+      user_id: userId,
+      recipient_name: addr.recipientName,
+      phone: addr.phone,
+      address: addr.address,
+      province: addr.province,
+      municipality: addr.municipality
+    }));
+    
+    // Insert addresses into Supabase
+    const { error } = await supabase
+      .from('addresses')
+      .insert(supabaseAddresses);
+      
+    if (error) throw error;
+    
+    // Clear localStorage addresses after successful migration
+    localStorage.removeItem(STORAGE_KEY);
+    console.log('✅ Guest addresses migrated successfully');
+  } catch (error) {
+    console.error('Error migrating guest addresses:', error);
+  }
+}
+
 export function useAddresses() {
   const { user } = useAuth();
   const [addresses, setAddresses] = useState<DeliveryAddress[]>([]);
@@ -130,6 +168,7 @@ export function useAddresses() {
     removeAddress,
     userInfo,
     saveUserInfo,
+    loadAddressesFromSupabase,
     isLoading: false
   };
 }
