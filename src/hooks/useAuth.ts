@@ -135,8 +135,33 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
+      // Check if we have a session first
+      const { data: { session: currentSession }, error: sessionError } = 
+        await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Error checking session:', sessionError);
+        throw new Error('Error checking authentication status');
+      }
+
+      if (!currentSession) {
+        console.log('No active session to sign out from');
+        return;
+      }
+
+      // Clear local storage first as fallback
+      localStorage.removeItem('supabase.auth.token');
+
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('Forbidden')) {
+          throw new Error('Logout request was blocked. Please try again or clear browser data.');
+        }
+        if (error.message.includes('Network')) {
+          throw new Error('Network error during logout. Please check your connection.');
+        }
+        throw error;
+      }
       
       // Reset user data in Crisp
       if (window.$crisp) {
@@ -144,7 +169,13 @@ export function useAuth() {
       }
     } catch (error) {
       console.error('Error during sign out:', error);
-      throw error;
+      // Ensure we clear local storage on error
+      localStorage.removeItem('supabase.auth.token');
+      
+      if (error instanceof Error) {
+        throw new Error(`Logout failed: ${error.message}`);
+      }
+      throw new Error('Unknown error during logout');
     }
   };
 
