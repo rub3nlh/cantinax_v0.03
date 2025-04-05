@@ -48,8 +48,13 @@ export const ThankYouPage: React.FC = () => {
   const stateData = location.state as Partial<OrderSummary & { purchaseDate: Date }> || {};
   const { package: statePackage, purchaseDate: statePurchaseDate } = stateData;
   
-  // Obtener order_id de los parámetros de URL
+  // Obtener parámetros de URL
   const orderId = searchParams.get('order');
+  const reference = searchParams.get('reference');
+  const paymentState = searchParams.get('state');
+  
+  // Verificar si el pago fue exitoso (state=5 indica pago exitoso en TropiPay)
+  const isPaymentSuccessful = paymentState === '5';
   
   // Cargar detalles de la orden si hay un ID de orden en la URL
   useEffect(() => {
@@ -108,8 +113,11 @@ export const ThankYouPage: React.FC = () => {
   // Registrar completación de compra
   useEffect(() => {
     if ((orderDetails?.packageData || statePackage) && orderId) {
+      // Registrar evento de compra completada
       trackEvent(EventTypes.PURCHASE_COMPLETED, {
         order_id: orderId,
+        reference: reference || orderId, // Usar reference si está disponible
+        payment_state: paymentState || 'unknown',
         package_id: orderDetails?.packageData?.id || statePackage?.id,
         package_name: orderDetails?.packageData?.name || statePackage?.name,
         package_price: orderDetails?.packageData?.price || statePackage?.price,
@@ -121,10 +129,22 @@ export const ThankYouPage: React.FC = () => {
         is_logged_in: !!user,
         user_id: user?.id,
         funnel_step: 'purchase_completed',
-        conversion: true
+        conversion: true,
+        payment_successful: isPaymentSuccessful
       });
+      
+      // Registrar evento adicional si el pago fue exitoso
+      if (isPaymentSuccessful) {
+        trackEvent(EventTypes.PAYMENT_COMPLETED, {
+          order_id: orderId,
+          reference: reference || orderId,
+          payment_method: 'tropipay',
+          payment_state: paymentState,
+          funnel_step: 'payment_completed'
+        });
+      }
     }
-  }, [orderDetails, statePackage, orderId, user, statePurchaseDate]);
+  }, [orderDetails, statePackage, orderId, reference, paymentState, user, statePurchaseDate, isPaymentSuccessful]);
 
   // Renderizar estado de carga
   if (loading) {
@@ -224,6 +244,11 @@ export const ThankYouPage: React.FC = () => {
               <p className="text-xl text-gray-600">
                 Tu pedido ha sido confirmado y será preparado con mucho cariño
               </p>
+              {reference && (
+                <p className="mt-2 text-gray-500">
+                  Referencia de pago: {reference}
+                </p>
+              )}
             </div>
 
             {selectedPackage && (
@@ -238,6 +263,16 @@ export const ThankYouPage: React.FC = () => {
                       <p className="text-blue-600">{formatDate(purchaseDate)}</p>
                     </div>
                   </div>
+                  
+                  {isPaymentSuccessful && (
+                    <div className="flex items-start gap-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                      <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+                      <div>
+                        <h3 className="font-medium text-green-800">Pago confirmado</h3>
+                        <p className="text-green-600">Tu pago ha sido procesado correctamente</p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div>

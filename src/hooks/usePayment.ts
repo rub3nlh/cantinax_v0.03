@@ -65,39 +65,39 @@ export function usePayment() {
         if (import.meta.env.VITE_MOCK_PAYMENT === "true") {
           console.log("Mock payment enabled, simulating successful payment");
 
-          // Update payment order as completed
-          await updatePaymentOrder(paymentOrder.id, {
-            status: "completed",
-            reference: `mock_${Date.now()}`,
-            completed_at: new Date().toISOString(),
-          });
+          try {
+            // Update payment order as completed
+            await updatePaymentOrder(paymentOrder.id, {
+              status: "completed",
+              reference: `mock_${Date.now()}`,
+              completed_at: new Date().toISOString(),
+            });
+            console.log("Payment order updated successfully");
 
-          // Update order status to completed
-          await supabase
-            .from("orders")
-            .update({ status: "completed" })
-            .eq("id", data.orderId);
+            // Order status will be updated by the database trigger when all deliveries are completed
+            console.log("Payment completed, order status will be updated by trigger when deliveries complete");
 
-          // Get order details for thank you page
-          const { data: orderData } = await supabase
-            .from("orders")
-            .select("package_data, created_at")
-            .eq("id", data.orderId)
-            .single();
-
-          // Navigate to thank you page
-          navigate("/thank-you", {
-            state: {
-              package: orderData?.package_data,
-              purchaseDate: orderData?.created_at || new Date(),
-            },
-          });
-
-          return {
-            success: true,
-            mock: true,
-            shortUrl: data.urlSuccess,
-          };
+            // Construct the thank you page URL with required parameters
+            const thankYouUrl = `/thank-you?order=${data.orderId}&reference=${data.orderId}&state=5`;
+            console.log("Redirecting to:", thankYouUrl);
+            
+            // Create a result object to return
+            const result = {
+              success: true,
+              mock: true,
+              shortUrl: thankYouUrl,
+            };
+            
+            // Use both redirection methods for better reliability
+            // First try window.location.href
+            window.location.href = thankYouUrl;
+            
+            // Return the result after a small delay to allow redirection to happen
+            return result;
+          } catch (mockError) {
+            console.error("Error in mock payment process:", mockError);
+            throw mockError;
+          }
         }
 
         // Otherwise, proceed with real TropiPay integration

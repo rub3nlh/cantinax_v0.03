@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { useAvatar } from '../hooks/useAvatar';
 import { User } from 'lucide-react';
 
@@ -8,7 +8,7 @@ interface UserAvatarProps {
   className?: string;
 }
 
-export const UserAvatar: React.FC<UserAvatarProps> = ({ 
+export const UserAvatar: React.FC<UserAvatarProps> = memo(({ 
   name, 
   size = 40,
   className = ''
@@ -18,15 +18,31 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { generateAvatar } = useAvatar();
 
+  // Handle image load error
+  const handleImageError = useCallback(() => {
+    setError(true);
+    setAvatarUrl(null);
+  }, []);
+
   useEffect(() => {
+    // Skip if no name is provided
+    if (!name) {
+      setIsLoading(false);
+      setError(true);
+      return;
+    }
+
     let isMounted = true;
     
     const loadAvatar = async () => {
-      if (!name) return;
+      // Reset states when name changes
+      if (isMounted) {
+        setIsLoading(true);
+        setError(false);
+      }
       
-      setIsLoading(true);
       try {
-        const displayName = name.split(' ')[0] || 'User';
+        const displayName = name.trim() || 'User';
         const url = await generateAvatar(displayName);
         
         if (isMounted) {
@@ -47,11 +63,15 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       }
     };
 
-    loadAvatar();
+    // Debounce the avatar loading to prevent rapid consecutive calls
+    const timeoutId = setTimeout(() => {
+      loadAvatar();
+    }, 50);
     
     // Cleanup function
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
     };
   }, [name, generateAvatar]);
 
@@ -61,6 +81,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       <div 
         className={`bg-gray-200 rounded-full flex items-center justify-center ${className}`}
         style={{ width: size, height: size }}
+        aria-label={`${name || 'User'}'s avatar placeholder`}
       >
         <User className="w-5 h-5 text-gray-500" />
       </div>
@@ -73,7 +94,8 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       alt={`${name || 'User'}'s avatar`}
       className={`rounded-full object-cover ${className}`}
       style={{ width: size, height: size }}
-      onError={() => setError(true)}
+      onError={handleImageError}
+      loading="lazy"
     />
   );
-};
+});
