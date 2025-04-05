@@ -5,6 +5,7 @@ import { CheckCircle, Calendar, ChevronRight, ShoppingBag, Loader, AlertCircle }
 import { OrderSummary, Package } from '../types';
 import { Footer } from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
+import { usePaymentOrders } from '../hooks/usePaymentOrders';
 import { trackEvent, EventTypes } from '../lib/analytics';
 import { supabase } from '../lib/supabase';
 
@@ -38,6 +39,7 @@ export const ThankYouPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { getOrderPayments, updatePaymentOrder } = usePaymentOrders();
   
   // Estado para manejar la carga de datos
   const [loading, setLoading] = useState(false);
@@ -145,6 +147,38 @@ export const ThankYouPage: React.FC = () => {
       }
     }
   }, [orderDetails, statePackage, orderId, reference, paymentState, user, statePurchaseDate, isPaymentSuccessful]);
+
+  // Actualizar estado del pago cuando se detecta un pago exitoso
+  useEffect(() => {
+    const updatePaymentStatus = async () => {
+      if (isPaymentSuccessful && orderId) {
+        try {
+          console.log('Updating payment status for order:', orderId);
+          
+          // Buscar las órdenes de pago asociadas a este pedido
+          const paymentOrders = await getOrderPayments(orderId);
+          console.log('Found payment orders:', paymentOrders);
+          
+          // Si hay órdenes de pago pendientes, actualizarlas a completadas
+          for (const payment of paymentOrders) {
+            if (payment.status === 'pending') {
+              console.log('Updating payment order to completed:', payment.id);
+              await updatePaymentOrder(payment.id, {
+                status: 'completed',
+                reference: reference || payment.reference,
+                completed_at: new Date().toISOString(),
+              });
+              console.log(`Payment order ${payment.id} updated to completed`);
+            }
+          }
+        } catch (error) {
+          console.error('Error updating payment status:', error);
+        }
+      }
+    };
+    
+    updatePaymentStatus();
+  }, [isPaymentSuccessful, orderId, reference, updatePaymentOrder, getOrderPayments]);
 
   // Renderizar estado de carga
   if (loading) {
