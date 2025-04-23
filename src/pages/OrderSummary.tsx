@@ -132,6 +132,28 @@ export const OrderSummary: React.FC = () => {
       }
     }
 
+    // HACK: Reordenar las comidas si la primera tiene cantidad > 1
+    let optimizedMeals = [...selectedMeals];
+    if (selectedMeals.length > 1 && selectedMeals[0].count > 1) {
+      console.log('⚠️ Primera comida con cantidad > 1, reordenando para evitar error...');
+      // Buscar una comida con cantidad = 1 para ponerla al principio
+      const indexWithCountOne = selectedMeals.findIndex(item => item.count === 1);
+      
+      if (indexWithCountOne > 0) {
+        // Intercambiar la primera comida con la que tiene cantidad = 1
+        const temp = optimizedMeals[0];
+        optimizedMeals[0] = optimizedMeals[indexWithCountOne];
+        optimizedMeals[indexWithCountOne] = temp;
+        console.log('🔄 Comidas reordenadas para evitar error en el pedido');
+      } else {
+        // Si todas tienen cantidad > 1, simplemente reordenarlas para evitar el problema
+        const temp = optimizedMeals[0];
+        optimizedMeals[0] = optimizedMeals[optimizedMeals.length - 1];
+        optimizedMeals[optimizedMeals.length - 1] = temp;
+        console.log('🔄 Comidas reordenadas para evitar error en el pedido');
+      }
+    }
+
     // Save user info if not logged in
     if (!user) {
       saveUserInfo({ name, email });
@@ -141,7 +163,7 @@ export const OrderSummary: React.FC = () => {
         returnTo: '/payment',
         orderData: {
           package: selectedPackage,
-          selectedMeals,
+          selectedMeals: optimizedMeals,  // Usar las comidas optimizadas
           personalNote,
           deliveryAddress: selectedAddress
         }
@@ -158,7 +180,7 @@ export const OrderSummary: React.FC = () => {
     navigate('/payment', {
       state: {
         package: selectedPackage,
-        selectedMeals,
+        selectedMeals: optimizedMeals,  // Usar las comidas optimizadas
         personalNote,
         deliveryAddress: selectedAddress
       }
