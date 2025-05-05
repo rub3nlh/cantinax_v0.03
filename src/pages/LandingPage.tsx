@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChefHat, Heart, Leaf, Truck, Clock, ShieldCheck, Instagram, MessageCircle, ChevronRight, ChevronDown, Info } from 'lucide-react';
+import { Label } from '../components/ui/Label';
 import { packages } from '../data/packages';
 import { MealDetails } from '../components/MealDetails';
 import { FAQ } from '../components/FAQ';
 import { Footer } from '../components/Footer';
+import { DiscountTag } from '../components/ui/DiscountTag';
 import { Meal } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMeals } from '../hooks/useMeals';
@@ -39,9 +41,9 @@ export const LandingPage: React.FC = () => {
         <div className="container mx-auto px-4 py-12 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[calc(100vh-6rem)]">
             <div className="text-left space-y-8">
-              <div className="inline-block bg-red-100 text-red-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+              <DiscountTag variant="yellow" className="mb-4">
                 ¡20% de descuento en tu primer pedido!
-              </div>
+              </DiscountTag>
               <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
                 Garantiza comidas caseras y saludables para tu familia en Cuba
               </h1>
@@ -205,11 +207,11 @@ export const LandingPage: React.FC = () => {
       </section>
 
       <section id="paquetes" className="py-20 bg-white">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 text-center ">
           <h2 className="text-4xl font-bold text-center mb-4">Nuestros Paquetes</h2>
-          <p className="text-center text-xl text-red-500 font-semibold mb-16">
+          <DiscountTag variant="yellow" className="text-center text-xl mb-16 mx-auto">
             ¡Primer pedido con 20% OFF usando CANTINAXL20!
-          </p>
+          </DiscountTag>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-8 rounded-lg bg-white border border-gray-200">
               <h3 className="text-2xl font-bold mb-2">3 días</h3>
@@ -232,7 +234,7 @@ export const LandingPage: React.FC = () => {
               >
                 Seleccionar
               </button>
-              <div className="mt-2 text-sm">Más popular</div>
+              <Label className="mt-2 text-sm w-full text-center">Más popular</Label>
             </div>
             <div className="p-8 rounded-lg bg-white border border-gray-200">
               <h3 className="text-2xl font-bold mb-2">7 días</h3>
