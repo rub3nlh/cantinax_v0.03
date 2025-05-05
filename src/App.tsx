@@ -83,9 +83,12 @@ function App() {
         <nav className="bg-white shadow-sm relative z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex justify-between items-center">
-              <Link to="/" className="flex items-center gap-2 text-red-500">
-                <ChefHat className="w-8 h-8" />
-                <span className="text-xl font-bold">LaCantinaXL</span>
+              <Link to="/" className="flex items-center">
+                <img 
+                  src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//cantinaxl-09.png" 
+                  alt="LaCantinaXL Logo" 
+                  className="h-16 w-auto object-contain"
+                />
               </Link>
 
               {/* Desktop Navigation */}
