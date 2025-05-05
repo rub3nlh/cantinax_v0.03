@@ -317,7 +317,7 @@ export const OrderSummary: React.FC = () => {
               <textarea
                 value={personalNote}
                 onChange={(e) => setPersonalNote(e.target.value)}
-                placeholder="Escribe un mensaje personal para tu familiar..."
+                placeholder="Personaliza tu pedido: Comparte alergias, intolerancias o preferencias especiales"
                 className="w-full h-32 p-4 border-2 border-gray-200 rounded-lg focus:border-red-500 focus:ring focus:ring-red-200 focus:ring-opacity-50"
               />
             </div>
