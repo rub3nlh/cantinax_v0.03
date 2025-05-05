@@ -65,7 +65,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-3 gap-6 pt-8">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">3h</div>
+                  <div className="text-2xl font-bold text-gray-900">48h</div>
                   <div className="text-sm text-gray-600">Tendrás tu primera entrega</div>
                 </div>
                 <div className="text-center">
@@ -163,7 +163,7 @@ export const LandingPage: React.FC = () => {
               <div className="mb-4 flex justify-center">
                 <Truck className="w-12 h-12 text-red-500" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Entregas cada 48 horas</h3>
+              <h3 className="text-xl font-semibold mb-2">Entregas diarias</h3>
               <p className="text-gray-600">Puntualidad garantizada en cada entrega</p>
             </div>
           </div>

@@ -19,8 +19,8 @@ const faqs: FAQItem[] = [
           <li><strong>Indica la dirección</strong>: Dinos dónde entregarlo y ¡listo!</li>
         </ol>
         <p>
-          La <strong>primera entrega</strong> llegará a la puerta de tu hogar en <strong>menos de 3 horas</strong> después de confirmar tu pedido. 
-          Luego, recibirás entregas cada <strong>48 horas</strong>, con <strong>2 días de comida fresca</strong> por paquete. 
+          La <strong>primera entrega</strong> llegará a la puerta de tu hogar en <strong>menos de 48 horas</strong> después de confirmar tu pedido. 
+          Luego, recibirás entregas <strong>cada día</strong>, con comida fresca diaria. 
           ¡Así garantizamos que siempre disfruten de platos recién hechos!
         </p>
       </div>
@@ -31,13 +31,13 @@ const faqs: FAQItem[] = [
     answer: (
       <div className="space-y-4">
         <p>
-          Tu primera entrega será <em>ultrarrápida</em>: <strong>en menos de 3 horas</strong> tras confirmar el pedido. 
-          Las siguientes llegaran cada <strong>48 horas</strong>, respetando siempre el ritmo de tu paquete.
+          Tu primera entrega será <em>ultrarrápida</em>: <strong>en menos de 48 horas</strong> tras confirmar el pedido. 
+          Las siguientes llegaran <strong>cada día</strong>, respetando siempre el ritmo de tu paquete.
         </p>
         <p>Por ejemplo:</p>
         <ul className="list-disc list-inside space-y-1">
-          <li>Paquete de 3 comidas: 2 entregas (ej. Si pediste un lunes. Lunes: 2 comidas / miércoles: 1 comida).</li>
-          <li>Paquete de 7 comidas: 4 entregas (ej. Si pediste un lunes. Lunes: 2 comidas / miércoles: 2 comida / viernes: 2 comidas / domingo: 1 comida).</li>
+          <li>Paquete de 3 comidas: 3 entregas (ej. Si pediste un lunes. Martes: 1 comida / miércoles: 1 comida / jueves: 1 comida).</li>
+          <li>Paquete de 7 comidas: 7 entregas (ej. Si pediste un lunes. Martes: 1 comida / miércoles: 1 comida / jueves: 1 comida / viernes: 1 comida / sábado: 1 comida / domingo: 1 comida / lunes: 1 comida).</li>
         </ul>
         <p>¡Nunca te quedarás sin comida en la mesa!</p>
       </div>
@@ -116,20 +116,20 @@ const faqs: FAQItem[] = [
         <ul className="space-y-2">
           <li className="flex items-start gap-2">
             <span>🍽️</span>
-            <span><strong>Día 1</strong>: Disfruta una comida recién entregada.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span>❄️</span>
-            <span><strong>Día 2</strong>: Guarda la segunda comida <em>sin abrir</em> en la nevera.</span>
+            <span>Disfruta tu comida <strong>el mismo día de la entrega</strong> para máxima frescura.</span>
           </li>
           <li className="flex items-start gap-2">
             <span>⏲️</span>
             <span><strong>Al servir</strong>: Calienta en microondas 2-3 minutos y ¡listo!</span>
           </li>
+          <li className="flex items-start gap-2">
+            <span>❄️</span>
+            <span>Si no puedes consumirla el mismo día: Guárdala <em>sin abrir</em> en la nevera.</span>
+          </li>
         </ul>
         <p className="text-yellow-700 bg-yellow-50 p-4 rounded-lg flex items-start gap-2">
           <span>⚠️</span>
-          <span><em>No recomendamos guardar las comidas más de 48 horas para preservar su sabor y calidad.</em></span>
+          <span><em>No recomendamos guardar las comidas más de 24 horas para preservar su sabor y calidad.</em></span>
         </p>
       </div>
     )
