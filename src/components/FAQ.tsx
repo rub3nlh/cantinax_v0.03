@@ -34,6 +34,9 @@ const faqs: FAQItem[] = [
           Tu primera entrega será <em>ultrarrápida</em>: <strong>en menos de 48 horas</strong> tras confirmar el pedido. 
           Las siguientes llegaran <strong>cada día</strong>, respetando siempre el ritmo de tu paquete.
         </p>
+        <p>
+          Todas las entregas se realizan en el horario de <strong>11:00 AM a 5:00 PM</strong>, para asegurar que la comida llegue en el momento perfecto para ser disfrutada.
+        </p>
         <p>Por ejemplo:</p>
         <ul className="list-disc list-inside space-y-1">
           <li>Paquete de 3 comidas: 3 entregas (ej. Si pediste un lunes. Martes: 1 comida / miércoles: 1 comida / jueves: 1 comida).</li>

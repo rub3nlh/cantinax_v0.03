@@ -1,13 +1,23 @@
 import React from 'react';
 import { Instagram, MessageCircle, Heart, CreditCard, ShieldCheck } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
+  const navigate = useNavigate();
+  const location = useLocation();
   
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    // Check if we're on the landing page
+    if (location.pathname === '/') {
+      // We're on the landing page, try to scroll to the section
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // We're not on the landing page, navigate to the landing page with the hash
+      navigate(`/#${id}`);
     }
   };
 
