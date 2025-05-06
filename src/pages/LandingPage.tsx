@@ -68,7 +68,7 @@ export const LandingPage: React.FC = () => {
               <div className="grid grid-cols-3 gap-6 pt-8">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">48h</div>
-                  <div className="text-sm text-gray-600">Tendrás tu primera entrega</div>
+                  <div className="text-sm text-gray-600">Primera entrega</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">100%</div>
