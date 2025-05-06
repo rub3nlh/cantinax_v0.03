@@ -85,7 +85,7 @@ function App() {
             <div className="flex justify-between items-center">
               <Link to="/" className="flex items-center">
                 <img 
-                  src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//cantinaxl-09.png" 
+                  src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//cantinaxl.png" 
                   alt="LaCantinaXL Logo" 
                   className="h-16 w-auto object-contain"
                 />
