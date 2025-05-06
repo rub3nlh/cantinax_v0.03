@@ -332,23 +332,35 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center p-6">
               <div className="mb-4 flex justify-center">
-                <Leaf className="w-16 h-16 text-green-500" />
+                <img 
+                  src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//5-aroma%20xl.png" 
+                  alt="100% Fresco" 
+                  className="h-32 w-auto"
+                />
               </div>
-              <h3 className="text-xl font-semibold mb-2">100% Fresco</h3>
+              <h3 className="text-xl font-semibold mb-2 text-red-500">100% Fresco</h3>
               <p className="text-gray-600">Ingredientes frescos y de primera calidad</p>
             </div>
             <div className="text-center p-6">
               <div className="mb-4 flex justify-center">
-                <Clock className="w-16 h-16 text-blue-500" />
+                <img 
+                  src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//6-ovni%20xl.png" 
+                  alt="Entregas puntuales" 
+                  className="h-32 w-auto"
+                />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Entregas puntuales</h3>
+              <h3 className="text-xl font-semibold mb-2 text-red-500">Entregas puntuales</h3>
               <p className="text-gray-600">Garantizamos la entrega en el horario acordado</p>
             </div>
             <div className="text-center p-6">
               <div className="mb-4 flex justify-center">
-                <ShieldCheck className="w-16 h-16 text-red-500" />
+                <img 
+                  src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//4-chef%20xl.png" 
+                  alt="Seguridad alimentaria" 
+                  className="h-32 w-auto"
+                />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Seguridad alimentaria</h3>
+              <h3 className="text-xl font-semibold mb-2 text-red-500">Seguridad alimentaria</h3>
               <p className="text-gray-600">Máximos estándares de higiene y seguridad</p>
             </div>
           </div>
