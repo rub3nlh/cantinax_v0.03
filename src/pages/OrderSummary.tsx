@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Stepper } from '../components/Stepper';
 import { Footer } from '../components/Footer';
 import { Package, Meal, DeliveryAddress } from '../types';
+import { calculateDeliveryDates, DeliveryPreview } from '../utils/deliveryCalculator';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { AddressModal } from '../components/AddressModal';
@@ -187,6 +188,14 @@ export const OrderSummary: React.FC = () => {
     });
   };
 
+  // Calculate delivery dates
+  const deliveryPreviews = useMemo(() => {
+    if (selectedPackage && selectedMeals) {
+      return calculateDeliveryDates(selectedPackage, selectedMeals);
+    }
+    return [];
+  }, [selectedPackage, selectedMeals]);
+
   const handleAddAddress = (address: DeliveryAddress) => {
     addAddress(address);
     setSelectedAddress(address);
@@ -249,6 +258,45 @@ export const OrderSummary: React.FC = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <h3 className="font-semibold mb-4">Fechas de entrega previstas:</h3>
+              <div className="space-y-4">
+                {deliveryPreviews.map((delivery, index) => {
+                  const formattedDate = new Intl.DateTimeFormat('es-ES', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long'
+                  }).format(delivery.scheduledDate);
+                  
+                  const deliveryTimeWindow = "(entre las 11am y las 7pm)";
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="bg-gray-50 p-4 rounded-lg"
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="font-medium capitalize">
+                          {formattedDate} <span className="text-sm font-normal">{deliveryTimeWindow}</span>
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {delivery.meals.length} {delivery.meals.length === 1 ? 'comida' : 'comidas'}
+                        </p>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {delivery.meals.map((meal, mealIndex) => (
+                          <span key={meal.id}>
+                            {meal.name}
+                            {mealIndex < delivery.meals.length - 1 ? ', ' : ''}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
