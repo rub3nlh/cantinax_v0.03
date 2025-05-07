@@ -19,9 +19,12 @@ const faqs: FAQItem[] = [
           <li><strong>Indica la dirección</strong>: Dinos dónde entregarlo y ¡listo!</li>
         </ol>
         <p>
-          La <strong>primera entrega</strong> llegará a la puerta de tu hogar en <strong>menos de 48 horas</strong> después de confirmar tu pedido. 
+          La <strong>primera entrega</strong> llegará a la puerta de tu hogar <strong>a partir de 48 horas</strong> después de confirmar tu pedido. 
           Luego, recibirás entregas <strong>cada día</strong>, con comida fresca diaria. 
           ¡Así garantizamos que siempre disfruten de platos recién hechos!
+        </p>
+        <p>
+          Por ejemplo, si el lunes pides un paquete de 3 comidas, las recibirías el miércoles, jueves y viernes.
         </p>
       </div>
     )
@@ -31,16 +34,16 @@ const faqs: FAQItem[] = [
     answer: (
       <div className="space-y-4">
         <p>
-          Tu primera entrega será <em>ultrarrápida</em>: <strong>en menos de 48 horas</strong> tras confirmar el pedido. 
-          Las siguientes llegaran <strong>cada día</strong>, respetando siempre el ritmo de tu paquete.
+          Tu primera entrega <strong>a partir de las 48 horas</strong> tras confirmar el pedido. 
+          Las siguientes llegarán <strong>cada día</strong>, respetando siempre el ritmo de tu paquete.
         </p>
         <p>
-          Todas las entregas se realizan en el horario de <strong>11:00 AM a 5:00 PM</strong>, para asegurar que la comida llegue en el momento perfecto para ser disfrutada.
+          Todas las entregas se realizan en una única franja horaria: entre <strong>11:00AM y 7:00PM</strong>, para asegurar que la comida llegue en el momento perfecto para ser disfrutada.
         </p>
         <p>Por ejemplo:</p>
         <ul className="list-disc list-inside space-y-1">
-          <li>Paquete de 3 comidas: 3 entregas (ej. Si pediste un lunes. Martes: 1 comida / miércoles: 1 comida / jueves: 1 comida).</li>
-          <li>Paquete de 7 comidas: 7 entregas (ej. Si pediste un lunes. Martes: 1 comida / miércoles: 1 comida / jueves: 1 comida / viernes: 1 comida / sábado: 1 comida / domingo: 1 comida / lunes: 1 comida).</li>
+          <li>Paquete de 3 comidas: 3 entregas (ej. Si pediste un domingo. Martes: 1 comida / miércoles: 1 comida / jueves: 1 comida).</li>
+          <li>Paquete de 7 comidas: 7 entregas (ej. Si pediste un domingo. Martes: 1 comida / miércoles: 1 comida / jueves: 1 comida / viernes: 1 comida / sábado: 1 comida / domingo: 1 comida / lunes: 1 comida).</li>
         </ul>
         <p>¡Nunca te quedarás sin comida en la mesa!</p>
       </div>
@@ -51,7 +54,7 @@ const faqs: FAQItem[] = [
     answer: (
       <div className="space-y-4">
         <p>
-          Hoy estamos entregando sonrisas (y comida caliente) en <strong>toda La Habana y zonas aledañas</strong>. 
+          Hoy estamos entregando sonrisas (y comida caliente) en <strong>toda La Habana</strong>. 
           ¡Pronto llegaremos a más provincias!
         </p>
         <p>
@@ -100,11 +103,11 @@ const faqs: FAQItem[] = [
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-500">✓</span>
-            <span><strong>Empaque sellado al vacío</strong>: Cada comida viaja en recipientes herméticos para mantener su frescura.</span>
+            <span><strong>Empaque térmico</strong>: Cada comida viaja en recipientes termopacks desechables, que conservan la temperatura.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-500">✓</span>
-            <span><strong>Cadena de frío controlada</strong>: Transportamos los alimentos en vehículos refrigerados.</span>
+            <span><strong>Cadena de envío controlada</strong>: Transportamos los alimentos manteniendo una temperatura adecuada para su posterior consumo.</span>
           </li>
         </ul>
         <p><em>Desde la cocina hasta tu mesa, cuidamos cada detalle.</em></p>
@@ -123,11 +126,11 @@ const faqs: FAQItem[] = [
           </li>
           <li className="flex items-start gap-2">
             <span>⏲️</span>
-            <span><strong>Al servir</strong>: Calienta en microondas 2-3 minutos y ¡listo!</span>
+            <span><strong>Al servir</strong>: Aprovecha la temperatura del plato recién entregado, o caliéntala en microondas o sartén y ¡listo!</span>
           </li>
           <li className="flex items-start gap-2">
             <span>❄️</span>
-            <span>Si no puedes consumirla el mismo día: Guárdala <em>sin abrir</em> en la nevera.</span>
+            <span>Si no puedes consumirla el mismo día: Guárdala <em>sin abrir</em> en el refrigerador.</span>
           </li>
         </ul>
         <p className="text-yellow-700 bg-yellow-50 p-4 rounded-lg flex items-start gap-2">
@@ -142,8 +145,8 @@ const faqs: FAQItem[] = [
     answer: (
       <div className="space-y-4">
         <p>
-          ¡Claro que sí! En nuestra app, <strong>tú eres el chef</strong>. Mezcla platos como prefieras: 
-          ¿Arroz amarillo con pollo los lunes y pescado frito los viernes? ¿Bistec de cerdo todos los días? ¡Hazlo posible!
+          ¡Claro que sí! En nuestra web, <strong>tú eres el chef</strong>. Mezcla platos como prefieras: 
+          ¿Arroz amarillo con pollo un día y lonjas de cerdo el siguiente? ¿Bistec de cerdo todos los días? ¡Hazlo posible!
         </p>
         <p>
           Personaliza cada paquete para que tu familiar reciba exactamente lo que le gusta.
