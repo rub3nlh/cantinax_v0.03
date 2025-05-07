@@ -174,6 +174,85 @@ const faqs: FAQItem[] = [
         </p>
       </div>
     )
+  },
+  {
+    question: '¿En qué orden llegarán los platos que selecciono?',
+    answer: (
+      <div className="space-y-4">
+        <p>
+          ¡Tranquilo! Respetamos tus preferencias al 100%. Los platos llegarán <strong>exactamente en el mismo orden</strong> en que los seleccionaste al hacer tu pedido.
+        </p>
+        <p>
+          Así, si elegiste comenzar con un delicioso arroz con pollo y terminar con un bistec encebollado, ¡así será! Esto te permite planificar el menú de la semana según tus antojos o necesidades.
+        </p>
+        <p>
+          ¡Tú eres el chef y nosotros seguimos tu receta! 🍽️
+        </p>
+      </div>
+    )
+  },
+  {
+    question: '¿Cuál es la política de cancelación?',
+    answer: (
+      <div className="space-y-4">
+        <p>
+          Entendemos que los planes pueden cambiar. Por eso, puedes cancelar tu pedido <strong>dentro de las primeras 24 horas</strong> después de realizarlo, sin problema alguno.
+        </p>
+        <p>
+          Para cancelar, simplemente contáctanos a través de:
+        </p>
+        <ul className="space-y-2">
+          <li className="flex items-start gap-2">
+            <span>💬</span>
+            <span>El chat de nuestra web (¡respuesta rápida garantizada!)</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span>📱</span>
+            <span>Nuestro WhatsApp de atención al cliente</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span>✉️</span>
+            <span>Escribiéndonos un email a <a href="mailto:soporte@cantinaxl.com" className="text-red-500 hover:text-red-600">soporte@cantinaxl.com</a></span>
+          </li>
+        </ul>
+        <p>
+          Nuestro equipo estará encantado de ayudarte con el proceso de cancelación de manera rápida y sencilla.
+        </p>
+      </div>
+    )
+  },
+  {
+    question: '¿Puedo hacer cambios en mi orden después de confirmarla?',
+    answer: (
+      <div className="space-y-4">
+        <p>
+          ¡Claro que sí! Sabemos que a veces necesitas ajustar tus planes. En lugar de cancelar tu pedido, te ofrecemos opciones más flexibles:
+        </p>
+        <p>
+          <strong>Extensión con paquete adicional:</strong> ¿Necesitas más comidas? Podemos añadir un paquete adicional a tu orden existente, extendiendo así los días de servicio sin complicaciones.
+        </p>
+        <p>
+          Esta opción es perfecta para cuando:
+        </p>
+        <ul className="space-y-2">
+          <li className="flex items-start gap-2">
+            <span>✨</span>
+            <span>Te encantó nuestro servicio y quieres extenderlo</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span>✨</span>
+            <span>Tus planes cambiaron y necesitas más días de comida</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span>✨</span>
+            <span>Quieres probar más platos de nuestro menú</span>
+          </li>
+        </ul>
+        <p>
+          Contáctanos por WhatsApp o a través del chat web y te ayudaremos a personalizar tu experiencia. ¡Estamos para servirte!
+        </p>
+      </div>
+    )
   }
 ];
 
