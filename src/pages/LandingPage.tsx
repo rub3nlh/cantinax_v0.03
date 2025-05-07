@@ -45,10 +45,10 @@ export const LandingPage: React.FC = () => {
                 ¡20% de descuento en tu primer pedido!
               </DiscountTag>
               <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Garantiza comidas caseras y saludables para tu familia en Cuba
+                  Garantiza comida casera y saludable para tu familia en Cuba
               </h1>
               <p className="text-xl text-gray-600">
-                Tu madre merece comer bien, sin que tú te preocupes. Nosotros preparamos y entregamos.
+                Tú eliges el menú, nosotros nos encargamos del resto. Así es el sabor de estar cerca.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
@@ -174,7 +174,7 @@ export const LandingPage: React.FC = () => {
 
       <section id="como-funciona" className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16">¿Cómo funciona?</h2>
+          <h2 className="text-4xl font-bold text-center mb-16 text-red-500">¿CÓMO FUNCIONA?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center p-8 bg-white rounded-lg shadow-lg">
               <div className="w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
@@ -194,8 +194,8 @@ export const LandingPage: React.FC = () => {
               <div className="w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
                 3
               </div>
-              <h3 className="text-xl font-semibold mb-2">Programa la entrega</h3>
-              <p className="text-gray-600">Escoge los días y horarios que prefieras</p>
+              <h3 className="text-xl font-semibold mb-2">Recibe tu pedido</h3>
+              <p className="text-gray-600">48 horas después ¡Comienza a disfrutar!</p>
             </div>
           </div>
           <div className="text-center mt-8">
@@ -208,7 +208,7 @@ export const LandingPage: React.FC = () => {
 
       <section id="paquetes" className="py-20 bg-white">
         <div className="container mx-auto px-4 text-center ">
-          <h2 className="text-4xl font-bold text-center mb-4">Nuestros Paquetes</h2>
+          <h2 className="text-4xl font-bold text-center mb-4 text-red-500">NUESTROS PAQUETES</h2>
           <DiscountTag variant="yellow" className="text-center text-xl mb-16 mx-auto">
             ¡Primer pedido con 20% OFF usando CANTINAXL20!
           </DiscountTag>
@@ -253,7 +253,7 @@ export const LandingPage: React.FC = () => {
 
       <section id="menu" ref={menuRef} className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16">Mira nuestro menú</h2>
+          <h2 className="text-4xl font-bold text-center mb-16 text-red-500">MIRA NUESTRO MENÚ</h2>
           
           {loading ? (
             <div className="flex justify-center items-center min-h-[200px]">
