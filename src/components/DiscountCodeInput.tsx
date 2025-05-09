@@ -89,7 +89,7 @@ export const DiscountCodeInput: React.FC<DiscountCodeInputProps> = ({
           id="discount-code"
           value={inputValue}
           onChange={handleInputChange}
-          placeholder="Ej: CANTINAXL20"
+          placeholder="Ej: CANTINAXL15"
           className={`flex-grow px-3 py-2 border rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm ${
             appliedCode ? 'border-green-500 bg-green-50' : 'border-gray-300'
           } ${error ? 'border-red-500' : ''}`}
