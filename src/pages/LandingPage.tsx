@@ -210,7 +210,7 @@ export const LandingPage: React.FC = () => {
         <div className="container mx-auto px-4 text-center ">
           <h2 className="text-4xl font-bold text-center mb-4 text-red-500">NUESTROS PAQUETES</h2>
           <DiscountTag variant="yellow" className="text-center text-xl mb-16 mx-auto">
-            ¡Primer pedido con 20% OFF usando CANTINAXL15!
+            ¡Primer pedido con 15% OFF usando CANTINAXL15!
           </DiscountTag>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-8 rounded-lg bg-white border border-gray-200">
