@@ -215,7 +215,7 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-8 rounded-lg bg-white border border-gray-200">
               <h3 className="text-2xl font-bold mb-2">3 días</h3>
-              <p className="text-4xl font-bold mb-4">$29,99</p>
+              <p className="text-4xl font-bold mb-4">$29.99</p>
               <p className="mb-4">3 comidas</p>
               <button 
                 onClick={() => handleSelectPackage('basic')}
@@ -226,7 +226,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <div className="p-8 rounded-lg bg-red-500 text-white">
               <h3 className="text-2xl font-bold mb-2">5 días</h3>
-              <p className="text-4xl font-bold mb-4">$44,99</p>
+              <p className="text-4xl font-bold mb-4">$49.99</p>
               <p className="mb-4">5 comidas</p>
               <button 
                 onClick={() => handleSelectPackage('family')}
@@ -238,7 +238,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <div className="p-8 rounded-lg bg-white border border-gray-200">
               <h3 className="text-2xl font-bold mb-2">7 días</h3>
-              <p className="text-4xl font-bold mb-4">$59,99</p>
+              <p className="text-4xl font-bold mb-4">$69.99</p>
               <p className="mb-4">7 comidas</p>
               <button 
                 onClick={() => handleSelectPackage('premium')}
