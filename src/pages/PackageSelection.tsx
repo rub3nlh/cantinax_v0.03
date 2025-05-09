@@ -124,6 +124,7 @@ export const PackageSelection: React.FC = () => {
                 package={pkg.id === 'custom' && computedCustomPackage ? computedCustomPackage : pkg}
                 selected={selectedPackage?.id === pkg.id}
                 onSelect={handlePackageSelect}
+                onNextStep={handleNext}
                 customControls={selectedPackage?.id === 'custom' && pkg.id === 'custom' ? (
                   <div className="mt-4 space-y-4" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-between">

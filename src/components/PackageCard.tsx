@@ -6,6 +6,7 @@ interface PackageCardProps {
   package: Package;
   selected: boolean;
   onSelect: (pkg: Package) => void;
+  onNextStep?: () => void; // Nueva prop para manejar la navegación
   customControls?: React.ReactNode;
 }
 
@@ -13,6 +14,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
   package: pkg,
   selected,
   onSelect,
+  onNextStep,
   customControls,
 }) => {
   return (
@@ -48,8 +50,16 @@ export const PackageCard: React.FC<PackageCardProps> = ({
             ? 'bg-white text-red-500 hover:bg-red-50'
             : 'bg-red-500 text-white hover:bg-red-600'
         }`}
+        onClick={(e) => {
+          e.stopPropagation(); // Evitar que se propague al div padre
+          if (selected && onNextStep) {
+            onNextStep();
+          } else {
+            onSelect(pkg);
+          }
+        }}
       >
-        {selected ? 'Seleccionado' : 'Seleccionar'}
+        {selected ? 'Siguiente' : 'Seleccionar'}
       </button>
       {customControls}
     </motion.div>
