@@ -272,7 +272,7 @@ export const FAQ: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Preguntas Frecuentes</h2>
+            <h2 className="text-4xl font-bold mb-4 text-red-500">PREGUNTAS FRECUENTES</h2>
             <p className="text-xl text-gray-600">
               Tu tranquilidad es nuestra prioridad. Aquí resolvemos todas tus dudas.
             </p>
@@ -324,12 +324,12 @@ export const FAQ: React.FC = () => {
               </a>
             </div>
             <p className="text-sm text-gray-500 mt-2">
-              ¡Estamos aquí para servirte como a un hijo de la casa! ❤️
+              O escríbenos al <span className='text-red-500'>Chat</span>. Estamos aquí para ayudarte. ¡No dudes en contactarnos!
             </p>
           </div>
 
-          <div className="mt-12 text-center text-sm text-gray-500 italic border-t border-gray-200 pt-8">
-            En La Cantina XL, cada plato es una promesa de calidad, tradición y amor.
+          <div className="mt-12 text-center text-sm text-red-500 italic border-t border-gray-200 pt-8">
+            CantinaXL. ¡El sabor de estar cerca!
           </div>
         </div>
       </div>

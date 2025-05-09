@@ -67,15 +67,15 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-3 gap-6 pt-8">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">48h</div>
+                  <div className="text-2xl font-bold text-red-500">48h</div>
                   <div className="text-sm text-gray-600">Primera entrega</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">100%</div>
+                  <div className="text-2xl font-bold text-red-500">100%</div>
                   <div className="text-sm text-gray-600">Fresco y casero</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">4.9★</div>
+                  <div className="text-2xl font-bold text-red-500">4.9★</div>
                   <div className="text-sm text-gray-600">Calificación</div>
                 </div>
               </div>
@@ -86,7 +86,7 @@ export const LandingPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
-                      src="https://images.unsplash.com/photo-1624300629298-e9de39c13be5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                      src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-lechon.png"
                       alt="Bistec con arroz moro"
                       className="w-full h-48 object-cover"
                     />
@@ -97,7 +97,7 @@ export const LandingPage: React.FC = () => {
                   </div>
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
-                      src="https://images.unsplash.com/photo-1599974579688-8dbdd335c77f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                      src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-fricase.png"
                       alt="Ropa vieja"
                       className="w-full h-48 object-cover"
                     />
@@ -110,7 +110,7 @@ export const LandingPage: React.FC = () => {
                 <div className="space-y-4 transform translate-y-16">
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
-                      src="https://images.unsplash.com/photo-1512058564366-18510be2db19?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                      src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-lomo.png"
                       alt="Pollo asado"
                       className="w-full h-48 object-cover"
                     />
@@ -121,7 +121,7 @@ export const LandingPage: React.FC = () => {
                   </div>
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
-                      src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                      src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-arroz-frito-viandas.png"
                       alt="Pescado a la plancha"
                       className="w-full h-48 object-cover"
                     />
