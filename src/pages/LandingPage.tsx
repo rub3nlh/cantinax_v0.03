@@ -110,7 +110,7 @@ export const LandingPage: React.FC = () => {
                 <div className="space-y-4 transform translate-y-16">
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
-                      src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-lomo.png"
+                      src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-arroz-frito-viandas.png"
                       alt="Pollo asado"
                       className="w-full h-48 object-cover"
                     />
@@ -121,7 +121,7 @@ export const LandingPage: React.FC = () => {
                   </div>
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
-                      src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-arroz-frito-viandas.png"
+                      src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-lomo.png"
                       alt="Pescado a la plancha"
                       className="w-full h-48 object-cover"
                     />
