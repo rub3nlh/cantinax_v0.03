@@ -20,13 +20,13 @@ export const packages: Package[] = [
     name: 'Paquete Familiar',
     meals: 5,
     description: 'Ideal para una semana de tranquilidad.',
-    price: 44.99
+    price: 49.99
   },
   {
     id: 'premium',
     name: 'Paquete Premium',
     meals: 7,
     description: 'Cobertura completa, sin preocupaciones.',
-    price: 59.99
+    price: 69.99
   }
 ];

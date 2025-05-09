@@ -7,6 +7,7 @@ import { packages } from '../data/packages';
 import { Package } from '../types';
 import { motion } from 'framer-motion';
 import { trackEvent, EventTypes } from '../lib/analytics';
+import { calculatePackagePrice } from '../utils/priceCalculator';
 
 export const PackageSelection: React.FC = () => {
   const navigate = useNavigate();
@@ -48,9 +49,8 @@ export const PackageSelection: React.FC = () => {
       return packages.find(p => p.id === 'custom');
     }
     
-    // Deliveries are made every two days
-    const deliveries = Math.ceil(customDays / 2);
-    const price = (customMeals * 6) + (deliveries * 5);
+    // Aplicar la fórmula de cálculo de precio
+    const price = calculatePackagePrice(customMeals, customDays);
     
     return {
       ...selectedPackage,
@@ -68,9 +68,8 @@ export const PackageSelection: React.FC = () => {
     if (selectedPackage.id === 'custom') {
       if (customMeals <= 0 || customDays <= 0) return;
       
-      // Deliveries are made every two days
-      const deliveries = Math.ceil(customDays / 2);
-      const price = (customMeals * 6) + (deliveries * 5);
+      // Aplicar la fórmula de cálculo de precio
+      const price = calculatePackagePrice(customMeals, customDays);
       
       packageToSend = {
         ...selectedPackage,
