@@ -21,6 +21,11 @@ export const Footer: React.FC = () => {
     }
   };
 
+  const goToHome = () => {
+    // Always navigate to the home page
+    navigate('/');
+  };
+
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="container mx-auto px-4">
@@ -114,9 +119,10 @@ export const Footer: React.FC = () => {
         <div className="mt-12 pt-8 border-t border-gray-800 text-center">
           <div className="flex justify-center mb-6">
             <img 
-              src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//cantinaxl.png" 
+              src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//cantinaxl-subtitle-blanco.png" 
               alt="LaCantinaXL Logo" 
-              className="h-16 w-auto object-contain"
+              className="h-24 w-auto object-contain cursor-pointer"
+              onClick={goToHome}
             />
           </div>
           <p className="text-gray-400">

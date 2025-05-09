@@ -231,7 +231,7 @@ export const OrderSummary: React.FC = () => {
             <h2 className="text-2xl font-bold mb-6">Resumen del pedido</h2>
 
             <div className="mb-8">
-              <h3 className="font-semibold mb-4">Paquete seleccionado:</h3>
+              <h3 className="font-semibold mb-4 text-red-500">Paquete seleccionado:</h3>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-lg font-medium">{selectedPackage.name}</p>
                 <p className="text-gray-600">{selectedPackage.description}</p>
@@ -239,7 +239,7 @@ export const OrderSummary: React.FC = () => {
             </div>
 
             <div className="mb-8">
-              <h3 className="font-semibold mb-4">Comidas seleccionadas:</h3>
+              <h3 className="font-semibold mb-4 text-red-500">Comidas seleccionadas:</h3>
               <div className="space-y-4">
                 {selectedMeals.map(({ meal, count }) => (
                   <div
@@ -262,7 +262,7 @@ export const OrderSummary: React.FC = () => {
             </div>
 
             <div className="mb-8">
-              <h3 className="font-semibold mb-4">Fechas de entrega previstas:</h3>
+              <h3 className="font-semibold mb-4 text-red-500">Fechas de entrega previstas:</h3>
               <div className="space-y-4">
                 {deliveryPreviews.map((delivery, index) => {
                   const formattedDate = new Intl.DateTimeFormat('es-ES', {
@@ -271,7 +271,7 @@ export const OrderSummary: React.FC = () => {
                     month: 'long'
                   }).format(delivery.scheduledDate);
                   
-                  const deliveryTimeWindow = "(entre las 11am y las 7pm)";
+                  const deliveryTimeWindow = "entre 11:00 a. m. y 7:00 p. m.";
                   
                   return (
                     <div
@@ -301,7 +301,7 @@ export const OrderSummary: React.FC = () => {
             </div>
 
             <div className="mb-8">
-              <h3 className="font-semibold mb-4">Dirección de entrega:</h3>
+              <h3 className="font-semibold mb-4 text-red-500">Dirección de entrega:</h3>
               {addresses.length === 0 ? (
                 <div className="text-center py-8 bg-gray-50 rounded-lg">
                   <p className="text-gray-600 mb-4">Aún no has agregado ninguna dirección de entrega</p>
@@ -361,7 +361,7 @@ export const OrderSummary: React.FC = () => {
             </div>
 
             <div className="mb-8">
-              <h3 className="font-semibold mb-4">Nota personal:</h3>
+              <h3 className="font-semibold mb-4 text-red-500">Nota personal:</h3>
               <textarea
                 value={personalNote}
                 onChange={(e) => setPersonalNote(e.target.value)}

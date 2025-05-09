@@ -87,22 +87,22 @@ export const LandingPage: React.FC = () => {
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
                       src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-lechon.png"
-                      alt="Bistec con arroz moro"
+                      alt="Lonjas de cerdo"
                       className="w-full h-48 object-cover"
                     />
                     <div className="p-4">
-                      <h3 className="font-semibold">Bistec con Moro</h3>
+                      <h3 className="font-semibold">Lonjas de cerdo</h3>
                       <p className="text-sm text-gray-600">Lunes</p>
                     </div>
                   </div>
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
                       src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-fricase.png"
-                      alt="Ropa vieja"
+                      alt="Fricasé de cerdo"
                       className="w-full h-48 object-cover"
                     />
                     <div className="p-4">
-                      <h3 className="font-semibold">Ropa Vieja</h3>
+                      <h3 className="font-semibold">Fricasé de cerdo</h3>
                       <p className="text-sm text-gray-600">Martes</p>
                     </div>
                   </div>
@@ -111,22 +111,22 @@ export const LandingPage: React.FC = () => {
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
                       src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-arroz-frito-viandas.png"
-                      alt="Pollo asado"
+                      alt="Arroz frito"
                       className="w-full h-48 object-cover"
                     />
                     <div className="p-4">
-                      <h3 className="font-semibold">Pollo Asado</h3>
+                      <h3 className="font-semibold">Arroz frito</h3>
                       <p className="text-sm text-gray-600">Miércoles</p>
                     </div>
                   </div>
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
                       src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-lomo.png"
-                      alt="Pescado a la plancha"
+                      alt="Lonjas ahumadas"
                       className="w-full h-48 object-cover"
                     />
                     <div className="p-4">
-                      <h3 className="font-semibold">Pescado Plancha</h3>
+                      <h3 className="font-semibold">Lonjas ahumadas</h3>
                       <p className="text-sm text-gray-600">Jueves</p>
                     </div>
                   </div>
