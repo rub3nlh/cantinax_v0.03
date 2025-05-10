@@ -170,7 +170,8 @@ class TropiPayAPIService {
         singleUse: true,
         reasonId: 4, // Pago de servicio
         expirationDays: 1,
-        serviceDate: new Date().toISOString()
+        serviceDate: new Date().toISOString(),
+        paymentcardType: 4, // Redmarket 
       };
 
       console.log('Payload de pago enviado a TropiPay API:', JSON.stringify(payload, null, 2));
