@@ -81,7 +81,7 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-b from-[#FDF6F0] to-transparent lg:hidden z-10" />
+              <div className="absolute inset-x-0 top-[-2rem] bottom-0 bg-gradient-to-b from-[#FDF6F0] to-transparent lg:hidden z-10" />
               <div className="grid grid-cols-2 gap-4 transform translate-y-[-2rem]">
                 <div className="space-y-4">
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
