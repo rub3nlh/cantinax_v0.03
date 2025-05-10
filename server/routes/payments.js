@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import TropiPayService from '../services/tropipay.js';
+import TropiPayService from '../services/tropipay_selector.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
@@ -41,7 +41,7 @@ router.post('/create-payment-link', requireAuth, async (req, res) => {
             concept,
             description,
             currency,
-            amount: Math.round(amount), // TropiPay expects amount in cents
+            amount: Math.round(amount), // Amount should already be in cents from the frontend
             lang: 'es',
             urlSuccess,
             urlFailed,
@@ -105,7 +105,7 @@ router.post("/webhook", (req, res) => {
     const isVerifiedPayload = TropiPayService.verifyPayment(
         data.originalCurrencyAmount,
         data.bankOrderCode,
-        data.signaturev2
+        data.signaturev3 || data.signaturev2 // Support both signature versions
     );
 
     if (!isVerifiedPayload) {

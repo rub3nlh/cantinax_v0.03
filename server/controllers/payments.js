@@ -1,5 +1,5 @@
 import express from 'express';
-import tropiPayService from '../services/tropipay.js';
+import tropiPayService from '../services/tropipay_selector.js';
 
 const router = express.Router();
 

@@ -242,7 +242,7 @@ export const PaymentPage: React.FC = () => {
         reference: orderId,
         concept: `Pedido #${orderId.slice(0, 8)}`,
         amount: total * 100, // Use the discounted total, convert to cents
-        currency: 'EUR',
+        currency: 'USD',
         description: `${orderSummary.package.name} - ${orderSummary.selectedMeals.length} comidas`,
         urlSuccess: `${window.location.origin}/thank-you?order=${orderId}`,
         urlFailed: `${window.location.origin}/payment?order=${orderId}`,
