@@ -101,7 +101,8 @@ export const SignupPage: React.FC = () => {
   // Get return path and order data from location state
   const returnTo = location.state?.returnTo || '/';
   const orderData = location.state?.orderData;
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -119,7 +120,15 @@ export const SignupPage: React.FC = () => {
     if (userInfo) {
       const { email, name } = JSON.parse(userInfo);
       if (email) setEmail(email);
-      if (name) setName(name);
+      if (name) {
+        const nameParts = name.split(' ');
+        if (nameParts.length > 1) {
+          setFirstName(nameParts[0]);
+          setLastName(nameParts.slice(1).join(' '));
+        } else {
+          setFirstName(name);
+        }
+      }
     }
   }, []);
 
@@ -169,8 +178,13 @@ export const SignupPage: React.FC = () => {
       return;
     }
 
-    if (!name.trim()) {
+    if (!firstName.trim()) {
       setError('Por favor, ingresa tu nombre');
+      return;
+    }
+
+    if (!lastName.trim()) {
+      setError('Por favor, ingresa tu apellido');
       return;
     }
 
@@ -182,7 +196,7 @@ export const SignupPage: React.FC = () => {
     try {
       setIsLoading(true);
       const { needsEmailVerification } = await signUp(email, password, {
-        name: name.trim(),
+        name: `${firstName.trim()} ${lastName.trim()}`,
         phone: `${selectedCountryCode.code}${phoneNumber.trim()}`
       });
       
@@ -240,18 +254,36 @@ export const SignupPage: React.FC = () => {
                 
                 <form onSubmit={handleEmailSignup} className="space-y-4">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Nombre completo
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre
                     </label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <input
                         type="text"
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        id="firstName"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                        placeholder="Tu nombre completo"
+                        placeholder="Tu nombre"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                      Apellido
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="text"
+                        id="lastName"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        placeholder="Tu apellido"
                         required
                       />
                     </div>
