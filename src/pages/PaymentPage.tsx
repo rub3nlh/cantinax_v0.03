@@ -126,8 +126,10 @@ export const PaymentPage: React.FC = () => {
 
   // Calculate discounted total
   const subtotal = orderSummary?.package?.price || 0;
-  const discountAmount = discountDetails ? (subtotal * (discountDetails.discount_percentage / 100)) : 0;
-  const total = subtotal - discountAmount;
+  // Round discount amount to 2 decimal places to avoid floating point precision issues
+  const discountAmount = discountDetails ? parseFloat((subtotal * (discountDetails.discount_percentage / 100)).toFixed(2)) : 0;
+  // Round total to 2 decimal places to avoid floating point precision issues
+  const total = parseFloat((subtotal - discountAmount).toFixed(2));
 
   const handlePayment = async () => {
     if (!user || processing) return;
