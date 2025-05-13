@@ -26,17 +26,17 @@ describe('calculatePackagePrice', () => {
   });
 
   // Casos estándar de la tabla proporcionada
-  it('debería calcular correctamente el precio para 3 comidas y 3 entregas (paquete básico)', () => {
+  it('debería calcular correctamente el precio para 3 comidas y 3 entregas (Toquecito XL)', () => {
     // (3 * 6.00 + 3 * 2.50) * 1.17 = 29.835 -> 29.9 - 0.01 = 29.99
     expect(calculatePackagePrice(3, 3)).toBe(29.99);
   });
 
-  it('debería calcular correctamente el precio para 5 comidas y 5 entregas (paquete familiar)', () => {
+  it('debería calcular correctamente el precio para 5 comidas y 5 entregas (Semana Sabrosa)', () => {
     // (5 * 6.00 + 5 * 2.50) * 1.17 = 49.725 -> 49.8 - 0.01 = 49.99
     expect(calculatePackagePrice(5, 5)).toBe(49.99);
   });
 
-  it('debería calcular correctamente el precio para 7 comidas y 7 entregas (paquete premium)', () => {
+  it('debería calcular correctamente el precio para 7 comidas y 7 entregas (Combo Completo XL)', () => {
     // (7 * 6.00 + 7 * 2.50) * 1.17 = 69.615 -> 69.7 - 0.01 = 69.99
     expect(calculatePackagePrice(7, 7)).toBe(69.99);
   });

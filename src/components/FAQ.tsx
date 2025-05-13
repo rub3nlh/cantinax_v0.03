@@ -42,8 +42,8 @@ const faqs: FAQItem[] = [
         </p>
         <p>Por ejemplo:</p>
         <ul className="list-disc list-inside space-y-1">
-          <li>Paquete de 3 comidas: 3 entregas (ej. Si pediste un domingo. Martes: 1 comida / miércoles: 1 comida / jueves: 1 comida).</li>
-          <li>Paquete de 7 comidas: 7 entregas (ej. Si pediste un domingo. Martes: 1 comida / miércoles: 1 comida / jueves: 1 comida / viernes: 1 comida / sábado: 1 comida / domingo: 1 comida / lunes: 1 comida).</li>
+          <li>Toquecito XL: 3 entregas (ej. Si pediste un domingo. Martes: 1 comida / miércoles: 1 comida / jueves: 1 comida).</li>
+          <li>Combo Completo XL: 7 entregas (ej. Si pediste un domingo. Martes: 1 comida / miércoles: 1 comida / jueves: 1 comida / viernes: 1 comida / sábado: 1 comida / domingo: 1 comida / lunes: 1 comida).</li>
         </ul>
         <p>¡Nunca te quedarás sin comida en la mesa!</p>
       </div>
