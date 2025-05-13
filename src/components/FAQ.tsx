@@ -314,17 +314,8 @@ export const FAQ: React.FC = () => {
 
           <div className="mt-12 text-center">
             <p className="text-lg mb-4">¿Tienes más preguntas?</p>
-            <div className="flex items-center justify-center gap-2">
-              <Mail className="w-5 h-5 text-red-500" />
-              <a
-                href="mailto:soporte@cantinaxl.com"
-                className="text-red-500 hover:text-red-600 font-medium"
-              >
-                soporte@cantinaxl.com
-              </a>
-            </div>
             <p className="text-sm text-gray-500 mt-2">
-              O escríbenos al <span className='text-red-500'>Chat</span>. Estamos aquí para ayudarte. ¡No dudes en contactarnos!
+              Escríbenos al <span className='text-red-500'>Chat de la web</span>. Estamos aquí para ayudarte. ¡No dudes en contactarnos!
             </p>
           </div>
 

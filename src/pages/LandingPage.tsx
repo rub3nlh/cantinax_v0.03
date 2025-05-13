@@ -42,7 +42,7 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[calc(100vh-6rem)]">
             <div className="text-left space-y-8">
               <DiscountTag variant="yellow" className="mb-4">
-                ¡20% de descuento en tu primer pedido!
+                ¡15% de descuento en tu primer pedido!
               </DiscountTag>
               <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
                   Garantiza comida casera y saludable para tu familia en Cuba
