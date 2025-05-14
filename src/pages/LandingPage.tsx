@@ -86,7 +86,7 @@ export const LandingPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
-                      src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-lechon.png"
+                      src="https://img-thumb.mailinblue.com/6765316/images/content_library/original/682254ab26f8e2d685a486c9.jpeg"
                       alt="Lonjas de cerdo"
                       className="w-full h-48 object-cover"
                     />
@@ -97,7 +97,7 @@ export const LandingPage: React.FC = () => {
                   </div>
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
-                      src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-fricase.png"
+                      src="https://img-thumb.mailinblue.com/6765316/images/content_library/original/682254ab999ec966cf66c861.jpeg"
                       alt="Fricasé de cerdo"
                       className="w-full h-48 object-cover"
                     />
@@ -110,7 +110,7 @@ export const LandingPage: React.FC = () => {
                 <div className="space-y-4 transform translate-y-16">
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
-                      src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-arroz-frito-viandas.png"
+                      src="https://img-thumb.mailinblue.com/6765316/images/content_library/original/682254ab236acdd0e4d9c9ed.jpeg"
                       alt="Arroz frito"
                       className="w-full h-48 object-cover"
                     />
@@ -121,7 +121,7 @@ export const LandingPage: React.FC = () => {
                   </div>
                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <img
-                      src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//hero-lomo.png"
+                      src="https://img-thumb.mailinblue.com/6765316/images/content_library/original/682254abc099a2fac8f2077b.jpeg"
                       alt="Lonjas ahumadas"
                       className="w-full h-48 object-cover"
                     />
