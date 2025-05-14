@@ -146,18 +146,14 @@ router.post("/webhook", async (req, res) => {
                     email: orderData.email,
                     name: orderData.name,
                     orderId: orderData.orderId,
-                    orderDate: new Date().toLocaleDateString('es-ES'),
-                    paymentMethod: 'TropiPay',
                     deliveryAddress: orderData.deliveryAddress,
                     packageName: orderData.packageName,
                     packageQuantity: orderData.packageQuantity,
                     packagePrice: orderData.packagePrice,
-                    meals: orderData.meals,
                     discountCode: orderData.discountCode,
                     discountAmount: orderData.discountAmount,
                     totalAmount: orderData.totalAmount,
-                    deliveryDates: orderData.deliveryDates,
-                    orderDetailsUrl: `${process.env.CLIENT_URL || 'https://cantinaxl.com'}/orders/${orderData.orderId}`
+                    deliveryDates: orderData.deliveryDates
                 });
                 
                 console.log(`Order confirmation email sent for order ${orderData.orderId}`);
@@ -280,7 +276,6 @@ async function getOrderDataFromDatabase(reference) {
             packageName: packageData.name || 'Paquete',
             packageQuantity: 1, // Default to 1 if not specified
             packagePrice: packageData.price || 0,
-            meals: [],
             discountCode: '', // No discount code in the schema
             discountAmount: 0, // No discount amount in the schema
             totalAmount: orderData.total || 0,
@@ -306,11 +301,6 @@ async function getOrderDataFromDatabase(reference) {
                 packageName: 'Paquete Semanal',
                 packageQuantity: 1,
                 packagePrice: 59.99,
-                meals: [
-                    { name: 'Pollo al curry', description: 'Pollo con salsa de curry y arroz basmati' },
-                    { name: 'Ensalada César', description: 'Lechuga romana, pollo, crutones y aderezo César' },
-                    { name: 'Pasta Boloñesa', description: 'Espaguetis con salsa de carne y tomate' }
-                ],
                 discountCode: 'WELCOME10',
                 discountAmount: 5.99,
                 totalAmount: 54.00,

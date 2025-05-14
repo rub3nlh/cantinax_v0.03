@@ -41,11 +41,40 @@ const processTemplate = async (templateName, params) => {
     // Replace template variables with actual values
     let processedContent = templateContent;
     
-    // Replace each parameter in the template
-    Object.entries(params).forEach(([key, value]) => {
-      const regex = new RegExp(`\\{\\{ \\.${key} \\}\\}`, 'g');
-      processedContent = processedContent.replace(regex, value);
-    });
+    if (templateName === 'orderConfirmation') {
+      // Replace simple variables
+      Object.entries(params).forEach(([key, value]) => {
+        const regex = new RegExp(`\\$\\{${key}\\}`, 'g');
+        processedContent = processedContent.replace(regex, value || '');
+      });
+      
+      // Handle discount code placeholder
+      let discountHtml = '';
+      if (params.discountCode && params.discountCode.trim() !== '') {
+        discountHtml = `<p class="discount">
+                <strong>Código de descuento aplicado:</strong> ${params.discountCode} (-${params.discountAmount}€)
+            </p>`;
+      }
+      processedContent = processedContent.replace('<!-- DISCOUNT_CODE_PLACEHOLDER -->', discountHtml);
+      
+      // Handle delivery dates placeholder
+      let datesHtml = '';
+      if (params.deliveryDates) {
+        const datesArray = JSON.parse(params.deliveryDates);
+        datesArray.forEach(delivery => {
+          datesHtml += `<div class="delivery-date">
+                <p><strong>${delivery.date}:</strong> ${delivery.mealCount} comida${delivery.mealCount > 1 ? 's' : ''}</p>
+            </div>`;
+        });
+      }
+      processedContent = processedContent.replace('<!-- DELIVERY_DATES_PLACEHOLDER -->', datesHtml);
+    } else {
+      // For other templates, use the original Go template style replacement
+      Object.entries(params).forEach(([key, value]) => {
+        const regex = new RegExp(`\\{\\{ \\.${key} \\}\\}`, 'g');
+        processedContent = processedContent.replace(regex, value || '');
+      });
+    }
     
     return processedContent;
   } catch (error) {
@@ -174,37 +203,29 @@ const sendPasswordResetEmail = async (options) => {
  * @param {string} options.email - Recipient email address
  * @param {string} options.name - Recipient name
  * @param {string} options.orderId - Order ID
- * @param {string} options.orderDate - Order date
- * @param {string} options.paymentMethod - Payment method
  * @param {string} options.deliveryAddress - Delivery address
  * @param {string} options.packageName - Package name
  * @param {number} options.packageQuantity - Package quantity
  * @param {number} options.packagePrice - Package price
- * @param {Array} options.meals - Array of meal objects with name and description
  * @param {string} options.discountCode - Discount code (optional)
  * @param {number} options.discountAmount - Discount amount (optional)
  * @param {number} options.totalAmount - Total amount
  * @param {Array} options.deliveryDates - Array of delivery date objects with date and mealCount
- * @param {string} options.orderDetailsUrl - URL for order details
  * @returns {Promise} - Promise resolving to the API response
  */
 const sendOrderConfirmationEmail = async (options) => {
   // Process the template with parameters
   const htmlContent = await processTemplate('orderConfirmation', {
-    CustomerName: options.name,
-    OrderID: options.orderId,
-    OrderDate: options.orderDate,
-    PaymentMethod: options.paymentMethod,
-    DeliveryAddress: options.deliveryAddress,
-    PackageName: options.packageName,
-    PackageQuantity: options.packageQuantity.toString(),
-    PackagePrice: options.packagePrice.toString(),
-    Meals: JSON.stringify(options.meals),
-    DiscountCode: options.discountCode || '',
-    DiscountAmount: options.discountAmount ? options.discountAmount.toString() : '',
-    TotalAmount: options.totalAmount.toString(),
-    DeliveryDates: JSON.stringify(options.deliveryDates),
-    OrderDetailsURL: options.orderDetailsUrl
+    name: options.name,
+    orderId: options.orderId,
+    deliveryAddress: options.deliveryAddress,
+    packageName: options.packageName,
+    packageQuantity: options.packageQuantity.toString(),
+    packagePrice: options.packagePrice.toString(),
+    discountCode: options.discountCode || '',
+    discountAmount: options.discountAmount ? options.discountAmount.toString() : '',
+    totalAmount: options.totalAmount.toString(),
+    deliveryDates: JSON.stringify(options.deliveryDates)
   });
 
   // Send the email
