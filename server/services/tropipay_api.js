@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import axios from 'axios';
-import { randomUUID } from 'crypto';
+import crypto, { randomUUID } from 'crypto';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -231,7 +231,11 @@ class TropiPayAPIService {
    * @returns {boolean} Indica si la firma es válida
    */
   verifyPayment(originalCurrencyAmount, bankOrderCode, signaturev3) {
+    
+    console.log('Verificando firma de TropiPay');
+
     try {
+      
       // Si estamos en modo mock, devolvemos true
       if (process.env.MOCK_PAYMENT === 'true') {
         return true;
@@ -245,8 +249,7 @@ class TropiPayAPIService {
         throw new Error('Se requieren las credenciales del cliente para verificar la firma');
       }
       
-      // Importamos crypto para verificar la firma
-      const crypto = require('crypto');
+      // Usamos el módulo crypto importado para verificar la firma
       
       // Calculamos el SHA-1 del secreto del cliente
       const secretSha1 = crypto

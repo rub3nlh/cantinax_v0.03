@@ -121,7 +121,8 @@ Los archivos de distribución se generarán en el directorio `dist/`.
 ### Servidor Express
 
 - `GET /health`: Endpoint de verificación de salud del servidor
-- `POST /create-payment-link`: Crea un enlace de pago con TropiPay
+- `POST /api/payments/create-payment-link`: Crea un enlace de pago con TropiPay
+- `POST /api/payments/webhook`: Webhook para recibir notificaciones de pagos de TropiPay
 
 ## 🔐 Seguridad
 
@@ -158,3 +159,46 @@ Si tienes alguna pregunta o problema:
 - `npm run preview`: Vista previa de la build de producción
 - `npm run lint`: Ejecuta el linter
 - `npm run server`: Inicia solo el servidor Express
+- `node server/tests/test_payment_webhook.js`: Ejecuta el test de webhook de pago exitoso
+- `node server/tests/test_payment_webhook_failure.js`: Ejecuta el test de webhook de pago fallido
+- `node server/tests/run_webhook_tests.js`: Ejecuta ambos tests de webhook secuencialmente
+
+## 💳 Procesamiento de Pagos
+
+### Flujo de Pago con TropiPay
+
+1. El cliente selecciona sus comidas y procede al pago
+2. El frontend solicita un enlace de pago a través de `POST /api/payments/create-payment-link`
+3. El backend genera un enlace de pago usando la API de TropiPay
+4. El cliente es redirigido al enlace de pago para completar la transacción
+5. TropiPay notifica el resultado del pago a través del webhook configurado
+6. El webhook (`POST /api/payments/webhook`):
+   - Verifica la firma del pago para garantizar su autenticidad
+   - Busca la orden en la base de datos usando la referencia
+   - Actualiza el estado de la orden según el resultado del pago
+   - Si el pago es exitoso, envía un email de confirmación al cliente
+   - Devuelve una respuesta con el estado actualizado de la orden
+
+### Pruebas de Webhook
+
+Para probar el procesamiento de pagos, se han creado scripts de prueba:
+
+- `test_payment_webhook.js`: Simula una notificación de pago exitoso
+- `test_payment_webhook_failure.js`: Simula una notificación de pago fallido
+- `run_webhook_tests.js`: Ejecuta ambos tests secuencialmente
+
+Estos scripts envían payloads simulados al endpoint del webhook y verifican que la respuesta sea correcta.
+
+
+## Test Cards
+# PNP
+Operative	            Card
+3DS payment OK	         4761739000091011
+3DS payment KO	         5150796024238164
+Non-3DS payment OK	   5590337536718399
+Non-3DS payment + SCA	5223798193659108
+Non-3DS payment KO	   5485009949201879
+MoTo payment OK	      5150796024238164
+MoTo payment KO	      5485009949201879
+
+# Trust
