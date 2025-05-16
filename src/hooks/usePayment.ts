@@ -1,15 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PaymentMethod } from "../types";
 import { usePaymentOrders } from "./usePaymentOrders";
 import { supabase } from "../lib/supabase";
-import { useNavigate } from "react-router-dom";
-
-interface CardPaymentData {
-  cardNumber: string;
-  expiryDate: string;
-  cvv: string;
-  amount: number;
-}
 
 interface TropiPayData {
   reference: string;
@@ -26,17 +18,15 @@ interface TropiPayData {
     address: string;
     phone: string;
     email: string;
-    countryId: number;
+    countryIso: string;
   };
   orderId: string;
 }
 
 export function usePayment() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { createPaymentOrder, updatePaymentOrder } = usePaymentOrders();
-  const [useServerFallback, setUseServerFallback] = useState(true);
 
   const createTropiPayLink = async (data: TropiPayData) => {
     try {
@@ -51,7 +41,7 @@ export function usePayment() {
         throw new Error("No active session found");
       }
 
-      // Create payment order first
+      // Create payment order first with status 'pending'
       const paymentOrder = await createPaymentOrder({
         order_id: data.orderId,
         payment_method: "tropipay",
@@ -61,46 +51,7 @@ export function usePayment() {
       });
 
       try {
-        // If mock payment is enabled, simulate successful payment
-        if (import.meta.env.VITE_MOCK_PAYMENT === "true") {
-          console.log("Mock payment enabled, simulating successful payment");
-
-          try {
-            // Update payment order as completed
-            await updatePaymentOrder(paymentOrder.id, {
-              status: "completed",
-              reference: `mock_${Date.now()}`,
-              completed_at: new Date().toISOString(),
-            });
-            console.log("Payment order updated successfully");
-
-            // Order status will be updated by the database trigger when all deliveries are completed
-            console.log("Payment completed, order status will be updated by trigger when deliveries complete");
-
-            // Construct the thank you page URL with required parameters
-            const thankYouUrl = `/thank-you?order=${data.orderId}&reference=${data.orderId}&state=5`;
-            console.log("Redirecting to:", thankYouUrl);
-            
-            // Create a result object to return
-            const result = {
-              success: true,
-              mock: true,
-              shortUrl: thankYouUrl,
-            };
-            
-            // Use both redirection methods for better reliability
-            // First try window.location.href
-            window.location.href = thankYouUrl;
-            
-            // Return the result after a small delay to allow redirection to happen
-            return result;
-          } catch (mockError) {
-            console.error("Error in mock payment process:", mockError);
-            throw mockError;
-          }
-        }
-
-        // Otherwise, proceed with real TropiPay integration
+        // Create payment link via API
         const response = await fetch(
           `${window.location.origin}/api/payments/create-payment-link`,
           {
@@ -138,6 +89,7 @@ export function usePayment() {
         });
 
         return {
+          success: true,
           ...paymentResult,
           shortUrl:
             paymentResult.shortUrl || `https://tppay.me/${paymentResult.hash}`,

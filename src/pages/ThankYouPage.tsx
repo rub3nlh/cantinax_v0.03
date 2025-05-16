@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle, Calendar, ChevronRight, ShoppingBag, Loader, AlertCircle, Clock } from 'lucide-react';
 import { OrderSummary, Package } from '../types';
 import { Footer } from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
-import { usePaymentOrders } from '../hooks/usePaymentOrders';
 import { trackEvent, EventTypes } from '../lib/analytics';
 import { supabase } from '../lib/supabase';
 
@@ -34,12 +33,19 @@ interface OrderDetails {
   total: number;
 }
 
+interface PaymentOrder {
+  id: string;
+  order_id: string;
+  status: 'pending' | 'completed' | 'failed';
+  reference?: string;
+  error_message?: string;
+}
+
 export const ThankYouPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { getOrderPayments, updatePaymentOrder } = usePaymentOrders();
   
   // Estado para manejar la carga de datos
   const [loading, setLoading] = useState(false);
@@ -49,8 +55,8 @@ export const ThankYouPage: React.FC = () => {
   // Estados para el polling de verificación de pago
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'completed' | 'failed' | 'timeout'>('pending');
   const [pollingCount, setPollingCount] = useState(0);
-  const MAX_POLLING_ATTEMPTS = 60; // Aproximadamente 3 minutos (cada 3 segundos)
-  const POLLING_INTERVAL = 3000; // 3 segundos
+  const MAX_POLLING_TIME = 120000; // 2 minutos máximo de espera
+  const [pollingStartTime, setPollingStartTime] = useState<number>(Date.now());
   
   // Obtener datos del estado de ubicación (si existe)
   const stateData = location.state as Partial<OrderSummary & { purchaseDate: Date }> || {};
@@ -59,10 +65,97 @@ export const ThankYouPage: React.FC = () => {
   // Obtener parámetros de URL
   const orderId = searchParams.get('order');
   const reference = searchParams.get('reference');
-  const paymentState = searchParams.get('state');
   
-  // Ya no usamos directamente el estado de la URL para determinar si el pago fue exitoso
-  // En su lugar, esperaremos la confirmación del webhook
+  // Función para obtener el estado del pago
+  const checkPaymentStatus = useCallback(async () => {
+    if (!orderId) return;
+    
+    try {
+      console.log(`Verificando estado de pago (intento ${pollingCount + 1})...`);
+      
+      // Calcular tiempo transcurrido desde el inicio del polling
+      const elapsedTime = Date.now() - pollingStartTime;
+      
+      // Si se ha superado el tiempo máximo, mostrar timeout
+      if (elapsedTime > MAX_POLLING_TIME) {
+        console.log('Timeout en la verificación del pago');
+        setPaymentStatus('timeout');
+        setError('No se pudo verificar el estado del pago. Te notificaremos por email cuando se confirme.');
+        return;
+      }
+      
+      // Obtener las órdenes de pago asociadas a este pedido
+      const { data: paymentOrders, error: fetchError } = await supabase
+        .from('payment_orders')
+        .select('id, order_id, status, reference, error_message')
+        .eq('order_id', orderId);
+      
+      if (fetchError) {
+        console.error('Error fetching payment orders:', fetchError);
+        setPollingCount(prev => prev + 1);
+        return;
+      }
+      
+      console.log('Órdenes de pago encontradas:', paymentOrders);
+      
+      // Verificar si alguna está completada o fallida
+      const completedPayment = paymentOrders?.find(p => p.status === 'completed');
+      const failedPayment = paymentOrders?.find(p => p.status === 'failed');
+      
+      if (completedPayment) {
+        console.log('Pago verificado como completado');
+        setPaymentStatus('completed');
+        trackPaymentEvent(true, completedPayment);
+      } else if (failedPayment) {
+        console.log('Pago verificado como fallido');
+        setPaymentStatus('failed');
+        setError(failedPayment.error_message || 'El pago no ha podido ser procesado');
+        trackPaymentEvent(false, failedPayment);
+      } else {
+        // Incrementar contador para el siguiente intento
+        setPollingCount(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+      setPollingCount(prev => prev + 1);
+    }
+  }, [orderId, pollingCount, pollingStartTime]);
+  
+  // Función para registrar eventos de pago
+  const trackPaymentEvent = (isSuccessful: boolean, paymentOrder: PaymentOrder) => {
+    if (!orderId || !orderDetails?.packageData) return;
+    
+    // Registrar evento de compra completada
+    trackEvent(EventTypes.PURCHASE_COMPLETED, {
+      order_id: orderId,
+      reference: paymentOrder.reference || reference || orderId,
+      payment_state: isSuccessful ? '5' : '0',
+      package_id: orderDetails.packageData.id,
+      package_name: orderDetails.packageData.name,
+      package_price: orderDetails.packageData.price,
+      purchase_date: orderDetails.purchaseDate 
+        ? new Date(orderDetails.purchaseDate).toISOString() 
+        : statePurchaseDate 
+          ? new Date(statePurchaseDate).toISOString()
+          : new Date().toISOString(),
+      is_logged_in: !!user,
+      user_id: user?.id,
+      funnel_step: 'purchase_completed',
+      conversion: true,
+      payment_successful: isSuccessful
+    });
+    
+    // Registrar evento adicional si el pago fue exitoso
+    if (isSuccessful) {
+      trackEvent(EventTypes.PAYMENT_COMPLETED, {
+        order_id: orderId,
+        reference: paymentOrder.reference || reference || orderId,
+        payment_method: 'tropipay',
+        payment_state: '5',
+        funnel_step: 'payment_completed'
+      });
+    }
+  };
   
   // Cargar detalles de la orden si hay un ID de orden en la URL
   useEffect(() => {
@@ -118,117 +211,34 @@ export const ThankYouPage: React.FC = () => {
     fetchOrderDetails();
   }, [orderId, statePackage, statePurchaseDate]);
   
-  // Verificar si estamos en modo de pago simulado
-  const isMockPayment = import.meta.env.VITE_MOCK_PAYMENT === 'true';
-  
-  // Implementación del polling para verificar el estado del pago
+  // Implementación del polling con intervalos progresivos
   useEffect(() => {
-    // Solo iniciar polling si tenemos un orderId y estamos en estado pendiente
-    if (orderId && paymentStatus === 'pending' && pollingCount < MAX_POLLING_ATTEMPTS) {
-      const checkPaymentStatus = async () => {
-        try {
-          console.log(`Verificando estado de pago (intento ${pollingCount + 1}/${MAX_POLLING_ATTEMPTS})...`);
-          console.log(`Modo de pago simulado: ${isMockPayment ? 'SÍ' : 'NO'}`);
-          
-          // Obtener las órdenes de pago asociadas a este pedido
-          const paymentOrders = await getOrderPayments(orderId);
-          
-          console.log('Órdenes de pago encontradas:', paymentOrders);
-          
-          // Verificar si alguna está completada o fallida
-          const completedPayment = paymentOrders.find(p => p.status === 'completed');
-          const failedPayment = paymentOrders.find(p => p.status === 'failed');
-          
-          // En modo de pago simulado, necesitamos esperar a que el webhook actualice el estado
-          // aunque el pago ya esté marcado como completado en la base de datos
-          if (completedPayment) {
-            // Verificar si el pago fue completado por el webhook o por el mock payment
-            const wasCompletedByWebhook = completedPayment.reference && 
-                                         !completedPayment.reference.startsWith('mock_');
-            
-            if (wasCompletedByWebhook || !isMockPayment) {
-              console.log('Pago verificado como completado por webhook');
-              setPaymentStatus('completed');
-            } else {
-              console.log('Pago completado por mock, esperando confirmación del webhook...');
-              // Seguimos en estado pendiente hasta que el webhook actualice el estado
-              setPollingCount(prev => prev + 1);
-            }
-          } else if (failedPayment) {
-            console.log('Pago verificado como fallido por webhook');
-            setPaymentStatus('failed');
-          } else {
-            // Incrementar contador y programar siguiente intento
-            setPollingCount(prev => prev + 1);
-          }
-        } catch (error) {
-          console.error('Error checking payment status:', error);
-          // Incrementar contador incluso en caso de error
-          setPollingCount(prev => prev + 1);
-        }
-      };
-
-      // Ejecutar la primera verificación inmediatamente
-      checkPaymentStatus();
-      
-      // Programar verificaciones periódicas
-      const intervalId = setInterval(checkPaymentStatus, POLLING_INTERVAL);
-      
-      // Limpiar intervalo al desmontar
-      return () => clearInterval(intervalId);
-    }
-  }, [orderId, paymentStatus, pollingCount, getOrderPayments]);
-
-  // Efecto para manejar el timeout del polling
-  useEffect(() => {
-    if (pollingCount >= MAX_POLLING_ATTEMPTS && paymentStatus === 'pending') {
-      // Se agotaron los intentos sin verificación
-      console.log('Timeout en la verificación del pago');
-      setPaymentStatus('timeout');
-      setError('No se pudo verificar el estado del pago. Por favor, contacta con soporte.');
-    }
-  }, [pollingCount, paymentStatus]);
-
-  // Registrar completación de compra
-  useEffect(() => {
-    if ((orderDetails?.packageData || statePackage) && orderId && (paymentStatus === 'completed' || paymentStatus === 'failed')) {
-      const isPaymentSuccessful = paymentStatus === 'completed';
-      
-      // Registrar evento de compra completada
-      trackEvent(EventTypes.PURCHASE_COMPLETED, {
-        order_id: orderId,
-        reference: reference || orderId, // Usar reference si está disponible
-        payment_state: isPaymentSuccessful ? '5' : '0', // Mantener compatibilidad con el formato anterior
-        package_id: orderDetails?.packageData?.id || statePackage?.id,
-        package_name: orderDetails?.packageData?.name || statePackage?.name,
-        package_price: orderDetails?.packageData?.price || statePackage?.price,
-        purchase_date: orderDetails?.purchaseDate 
-          ? new Date(orderDetails.purchaseDate).toISOString() 
-          : statePurchaseDate 
-            ? new Date(statePurchaseDate).toISOString()
-            : new Date().toISOString(),
-        is_logged_in: !!user,
-        user_id: user?.id,
-        funnel_step: 'purchase_completed',
-        conversion: true,
-        payment_successful: isPaymentSuccessful
-      });
-      
-      // Registrar evento adicional si el pago fue exitoso
-      if (isPaymentSuccessful) {
-        trackEvent(EventTypes.PAYMENT_COMPLETED, {
-          order_id: orderId,
-          reference: reference || orderId,
-          payment_method: 'tropipay',
-          payment_state: '5', // Mantener compatibilidad con el formato anterior
-          funnel_step: 'payment_completed'
-        });
+    if (orderId && paymentStatus === 'pending') {
+      // Iniciar el tiempo de polling si es el primer intento
+      if (pollingCount === 0) {
+        setPollingStartTime(Date.now());
       }
+      
+      // Calcular el intervalo de polling basado en el número de intentos
+      // Comienza con 2 segundos y aumenta gradualmente hasta 10 segundos
+      const baseInterval = 2000; // 2 segundos
+      const maxInterval = 10000; // 10 segundos
+      const interval = Math.min(baseInterval + (pollingCount * 500), maxInterval);
+      
+      console.log(`Programando próxima verificación en ${interval/1000} segundos...`);
+      
+      // Ejecutar la primera verificación inmediatamente si es el primer intento
+      if (pollingCount === 0) {
+        checkPaymentStatus();
+      }
+      
+      // Programar la próxima verificación
+      const timeoutId = setTimeout(checkPaymentStatus, interval);
+      
+      // Limpiar timeout al desmontar
+      return () => clearTimeout(timeoutId);
     }
-  }, [orderDetails, statePackage, orderId, reference, user, statePurchaseDate, paymentStatus]);
-
-  // Ya no actualizamos el estado del pago basado en los parámetros de URL
-  // Ahora esperamos a que el webhook actualice el estado y lo verificamos mediante polling
+  }, [orderId, paymentStatus, pollingCount, checkPaymentStatus]);
 
   // Renderizar estado de carga inicial
   if (loading) {
@@ -296,7 +306,7 @@ export const ThankYouPage: React.FC = () => {
                   {paymentStatus === 'failed' 
                     ? 'El pago no ha podido ser procesado. Por favor, intenta nuevamente.' 
                     : paymentStatus === 'timeout'
-                      ? 'No pudimos confirmar el estado de tu pago. Por favor, contacta con soporte.'
+                      ? 'No pudimos confirmar el estado de tu pago. Te notificaremos por email cuando se confirme.'
                       : error}
                 </p>
                 <button
@@ -390,15 +400,13 @@ export const ThankYouPage: React.FC = () => {
                       </div>
                     </div>
                     
-                    {paymentStatus === 'completed' && (
-                      <div className="flex items-start gap-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                        <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
-                        <div>
-                          <h3 className="font-medium text-green-800">Pago confirmado</h3>
-                          <p className="text-green-600">Tu pago ha sido procesado correctamente</p>
-                        </div>
+                    <div className="flex items-start gap-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                      <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+                      <div>
+                        <h3 className="font-medium text-green-800">Pago confirmado</h3>
+                        <p className="text-green-600">Tu pago ha sido procesado correctamente</p>
                       </div>
-                    )}
+                    </div>
 
                     <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <div>

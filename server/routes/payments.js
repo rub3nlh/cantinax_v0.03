@@ -1,9 +1,11 @@
 import express from 'express';
-const router = express.Router();
 import TropiPayService from '../services/tropipay_selector.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendOrderConfirmationEmail } from '../services/brevo_email.js';
 
+const router = express.Router();
+
+// Configuración de URLs
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
 const urlNotification = process.env.NOTIFICATION_URL || `${SERVER_URL}/api/payments/webhook`;
 
@@ -90,54 +92,73 @@ router.post('/create-payment-link', requireAuth, async (req, res) => {
     }
 });
 
-
-
 // Webhook de TropiPay
 router.post("/webhook", async (req, res) => {
-    // Process the received data
-    console.log("Received webhook payload:", req.body);
-    const { status, data } = req.body;
-    if (!status || !data) {
-        return res.status(400).json({
-            message: "Invalid payload",
-        });
-    }
-
-    // Check if we're in test mode (for automated tests)
-    const isTestMode = req.headers['x-test-mode'] === 'true';
-    
-    // Verify the payment signature unless we're in test mode
-    if (!isTestMode) {
-        const isVerifiedPayload = await TropiPayService.verifyPayment(
-            data.originalCurrencyAmount,
-            data.bankOrderCode,
-            data.signaturev3 || data.signaturev2 // Support both signature versions
-        );
-
-        if (!isVerifiedPayload) {
-            console.error("Invalid signature");
+    try {
+        // Process the received data
+        console.log("Received webhook payload:", req.body);
+        const { status, data } = req.body;
+        
+        if (!status || !data) {
+            console.error("Invalid webhook payload: missing status or data");
             return res.status(400).json({
-                message: "Invalid signature",
+                message: "Invalid payload",
             });
         }
-    } else {
-        console.log("Test mode detected, bypassing signature verification");
-    }
 
-    try {
-        // Get order data from the database using the reference from the payment data
-        const orderData = await getOrderDataFromDatabase(data.reference);
+        // Check if we're in test mode (for automated tests)
+        const isTestMode = req.headers['x-test-mode'] === 'true';
         
+        // Verify the payment signature unless we're in test mode
+        if (!isTestMode) {
+            const isVerifiedPayload = await TropiPayService.verifyPayment(
+                data.originalCurrencyAmount,
+                data.bankOrderCode,
+                data.signaturev3 || data.signaturev2 // Support both signature versions
+            );
+
+            if (!isVerifiedPayload) {
+                console.error("Invalid signature in webhook");
+                return res.status(400).json({
+                    message: "Invalid signature",
+                });
+            }
+            
+            console.log("Webhook signature verified successfully");
+        } else {
+            console.log("Test mode detected, bypassing signature verification");
+        }
+
+        // Get the reference from the webhook data
+        const reference = data.reference;
+        if (!reference) {
+            console.error("Missing reference in webhook data");
+            return res.status(400).json({
+                message: "Missing reference",
+            });
+        }
+
+        // Find the payment order by reference
+        const paymentOrder = await findPaymentOrder(reference);
+        if (!paymentOrder) {
+            console.error(`No payment order found for reference: ${reference}`);
+            return res.status(404).json({
+                message: "Payment order not found",
+            });
+        }
+
+        // Get the order data
+        const orderData = await getOrderData(paymentOrder.order_id);
         if (!orderData) {
-            console.error(`Order not found for reference: ${data.reference}`);
+            console.error(`Order not found for ID: ${paymentOrder.order_id}`);
             return res.status(404).json({
                 message: "Order not found",
             });
         }
-        
-        // Update order status in database based on payment status
+
+        // Update payment order status based on webhook status
         const paymentSuccessful = status === 'OK';
-        await updateOrderStatus(data.reference, paymentSuccessful, data);
+        await updatePaymentOrderStatus(paymentOrder.id, paymentSuccessful, data);
         
         // If payment was successful, send confirmation email
         if (paymentSuccessful) {
@@ -167,7 +188,7 @@ router.post("/webhook", async (req, res) => {
         
         return res.status(200).json({
             message: "Webhook processed successfully",
-            orderStatus: paymentSuccessful ? "completed" : "cancelled"
+            orderStatus: paymentSuccessful ? "completed" : "failed"
         });
     } catch (err) {
         console.error('Error processing webhook:', err);
@@ -178,13 +199,13 @@ router.post("/webhook", async (req, res) => {
 });
 
 /**
- * Helper function to get order data from the database
- * @param {string} reference - The order reference
- * @returns {Promise<Object>} - The order data
+ * Find a payment order by reference or order_id
+ * @param {string} reference - The payment reference or order_id
+ * @returns {Promise<Object|null>} - The payment order or null if not found
  */
-async function getOrderDataFromDatabase(reference) {
+async function findPaymentOrder(reference) {
     try {
-        console.log(`Getting order data for reference: ${reference}`);
+        console.log(`Finding payment order for reference: ${reference}`);
         
         // Create Supabase client
         const { createClient } = await import('@supabase/supabase-js');
@@ -197,24 +218,60 @@ async function getOrderDataFromDatabase(reference) {
         
         const supabase = createClient(supabaseUrl, supabaseKey);
         
-        // First, find the payment_order using the reference
-        const { data: paymentOrderData, error: paymentOrderError } = await supabase
+        // First, try to find by reference
+        let { data: paymentOrderByRef, error: refError } = await supabase
             .from('payment_orders')
-            .select('order_id')
+            .select('id, order_id, status')
             .eq('reference', reference)
             .single();
         
-        if (paymentOrderError) {
-            console.error('Error fetching payment order:', paymentOrderError);
-            throw paymentOrderError;
+        if (!refError && paymentOrderByRef) {
+            console.log(`Found payment order by reference: ${reference}`, paymentOrderByRef);
+            return paymentOrderByRef;
         }
         
-        if (!paymentOrderData) {
-            console.error(`No payment order found with reference: ${reference}`);
-            return null;
+        // If not found by reference, try by order_id
+        const { data: paymentOrderByOrderId, error: orderIdError } = await supabase
+            .from('payment_orders')
+            .select('id, order_id, status')
+            .eq('order_id', reference)
+            .order('created_at', { ascending: false })
+            .limit(1);
+        
+        if (!orderIdError && paymentOrderByOrderId && paymentOrderByOrderId.length > 0) {
+            console.log(`Found payment order by order_id: ${reference}`, paymentOrderByOrderId[0]);
+            return paymentOrderByOrderId[0];
         }
         
-        // Then, get the order data using the order_id from the payment_order
+        console.error(`No payment order found for reference or order_id: ${reference}`);
+        return null;
+    } catch (error) {
+        console.error(`Error finding payment order:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Get order data by order ID
+ * @param {string} orderId - The order ID
+ * @returns {Promise<Object|null>} - The order data or null if not found
+ */
+async function getOrderData(orderId) {
+    try {
+        console.log(`Getting order data for ID: ${orderId}`);
+        
+        // Create Supabase client
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+        
+        if (!supabaseUrl || !supabaseKey) {
+            throw new Error('Missing Supabase credentials in environment variables');
+        }
+        
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        // Get the order data
         const { data: orderData, error: orderError } = await supabase
             .from('orders')
             .select(`
@@ -236,45 +293,40 @@ async function getOrderDataFromDatabase(reference) {
                     )
                 )
             `)
-            .eq('id', paymentOrderData.order_id)
+            .eq('id', orderId)
             .single();
         
         if (orderError) {
             console.error('Error fetching order:', orderError);
-            throw orderError;
-        }
-        
-        if (!orderData) {
-            console.error(`No order found with reference: ${reference}`);
             return null;
         }
         
-        // Get user data with metadata (following the pattern in useProfile.ts)
+        if (!orderData) {
+            console.error(`No order found with ID: ${orderId}`);
+            return null;
+        }
+        
+        // Get user data
         const { data: userData, error: userError } = await supabase
             .auth.admin.getUserById(orderData.user_id);
             
         if (userError) {
             console.error('Error fetching user data:', userError);
-            throw userError;
+            return null;
         }
         
         // Transform the data to match the expected format for the email
         const packageData = orderData.package_data || {};
         const addressData = orderData.delivery_address_data || {};
-        
-        // Get user metadata following the pattern in useProfile.ts
         const userMetadata = userData?.user?.user_metadata || {};
         
         return {
             email: userMetadata.email,
             name: userMetadata.display_name,
-            phone: userMetadata.phone || '',
-            userAddress: userMetadata.address || '',
-            countryIso: userMetadata.country_iso || 'ES',
             orderId: orderData.id,
             deliveryAddress: `${addressData.address || ''}, ${addressData.municipality || ''}, ${addressData.province || ''}`,
             packageName: packageData.name || 'Paquete',
-            packageQuantity: 1, // Default to 1 if not specified
+            packageQuantity: 1,
             packagePrice: packageData.price || 0,
             discountCode: '', // No discount code in the schema
             discountAmount: 0, // No discount amount in the schema
@@ -285,52 +337,21 @@ async function getOrderDataFromDatabase(reference) {
             })) || []
         };
     } catch (error) {
-        console.error(`Error in getOrderDataFromDatabase:`, error);
-        
-        // If in development or testing, or if the reference starts with "TEST-", return mock data
-        if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || reference.startsWith('TEST-')) {
-            console.log('Returning mock data for testing');
-            return {
-                email: 'ruben.lh+brevo@gmail.com',
-                name: 'Cliente Ejemplo',
-                phone: '+34600000000',
-                userAddress: 'Calle Personal 123',
-                countryIso: 'ES',
-                orderId: reference,
-                deliveryAddress: 'Calle Ejemplo 123, Madrid, 28001',
-                packageName: 'Paquete Semanal',
-                packageQuantity: 1,
-                packagePrice: 59.99,
-                discountCode: 'WELCOME10',
-                discountAmount: 5.99,
-                totalAmount: 54.00,
-                deliveryDates: [
-                    { date: '15/05/2025', mealCount: 1 },
-                    { date: '17/05/2025', mealCount: 2 }
-                ]
-            };
-        }
-        
+        console.error(`Error in getOrderData:`, error);
         throw error;
     }
 }
 
 /**
- * Update order status in the database
- * @param {string} reference - The order reference
+ * Update payment order status
+ * @param {string} paymentOrderId - The payment order ID
  * @param {boolean} success - Whether the payment was successful
  * @param {Object} paymentData - The payment data from TropiPay
- * @returns {Promise<void>}
+ * @returns {Promise<Object|null>} - The updated payment order or null if not found
  */
-async function updateOrderStatus(reference, success, paymentData) {
+async function updatePaymentOrderStatus(paymentOrderId, success, paymentData) {
     try {
-        console.log(`Updating payment order status for reference: ${reference}, success: ${success}`);
-        
-        // If this is a test reference, just log and return
-        if (reference.startsWith('TEST-')) {
-            console.log(`Test reference detected: ${reference}. Skipping database update.`);
-            return;
-        }
+        console.log(`Updating payment order status for ID: ${paymentOrderId}, success: ${success}`);
         
         // Create Supabase client
         const { createClient } = await import('@supabase/supabase-js');
@@ -343,31 +364,31 @@ async function updateOrderStatus(reference, success, paymentData) {
         
         const supabase = createClient(supabaseUrl, supabaseKey);
         
-        // Update the payment_order status
-        const { data: updatedPayment, error: paymentUpdateError } = await supabase
+        // Update the payment order
+        const { data: updatedPayment, error: updateError } = await supabase
             .from('payment_orders')
             .update({
                 status: success ? 'completed' : 'failed',
                 completed_at: new Date().toISOString(),
                 error_message: success ? null : 'Payment failed'
             })
-            .eq('reference', reference)
+            .eq('id', paymentOrderId)
             .select();
         
-        if (paymentUpdateError) {
-            console.error('Error updating payment order status:', paymentUpdateError);
-            throw paymentUpdateError;
-        }
-        
-        if (!updatedPayment || updatedPayment.length === 0) {
-            console.error(`No payment order found with reference: ${reference}`);
+        if (updateError) {
+            console.error(`Error updating payment order ${paymentOrderId}:`, updateError);
             return null;
         }
         
-        console.log(`Payment order status updated successfully for reference: ${reference}`);
+        if (!updatedPayment || updatedPayment.length === 0) {
+            console.error(`No payment order found with ID: ${paymentOrderId}`);
+            return null;
+        }
+        
+        console.log(`Payment order ${paymentOrderId} updated successfully`);
         return updatedPayment[0];
     } catch (error) {
-        console.error(`Error in updateOrderStatus:`, error);
+        console.error(`Error in updatePaymentOrderStatus:`, error);
         throw error;
     }
 }
