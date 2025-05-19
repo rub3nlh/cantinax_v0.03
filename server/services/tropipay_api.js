@@ -45,6 +45,7 @@ class TropiPayAPIService {
     try {
       // Si ya tenemos un token válido, lo devolvemos
       if (this.accessToken && this.tokenExpiry && new Date() < this.tokenExpiry) {
+        console.log('Token de acceso existente y válido, reutilizando...');
         return this.accessToken;
       }
 
@@ -52,9 +53,11 @@ class TropiPayAPIService {
       if (process.env.MOCK_PAYMENT === 'true') {
         this.accessToken = 'mock_access_token';
         this.tokenExpiry = new Date(Date.now() + 3600 * 1000); // 1 hora
+        console.log('Modo mock: devolviendo token de acceso falso');
         return this.accessToken;
       }
 
+      console.log('Obteniendo nuevo token de acceso de TropiPay API');
       // Obtenemos un nuevo token según la documentación proporcionada
       const response = await axios.post(`${this.apiUrl}/access/token`, {
         grant_type: 'client_credentials',
@@ -69,7 +72,7 @@ class TropiPayAPIService {
       this.accessToken = response.data.access_token;
       // Establecemos la expiración del token (normalmente 1 hora)
       this.tokenExpiry = new Date(Date.now() + (response.data.expires_in || 3600) * 1000);
-
+      console.log('Token de acceso obtenido:', this.accessToken);
       return this.accessToken;
     } catch (error) {
       console.error('Error al obtener el token de acceso de TropiPay:', error);
