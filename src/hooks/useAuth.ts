@@ -57,6 +57,15 @@ export function useAuth() {
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setLoading(false);
+        
+        // Set user data in Crisp when user is verified or signs in
+        if (newSession?.user && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
+          if (window.$crisp) {
+            window.$crisp.push(['set', 'user:email', newSession.user.email]);
+            window.$crisp.push(['set', 'user:nickname', newSession.user.user_metadata?.display_name || '']);
+            window.$crisp.push(['set', 'user:phone', newSession.user.user_metadata?.phone || '']);
+          }
+        }
       }
     });
 
@@ -99,6 +108,13 @@ export function useAuth() {
       // If user doesn't need email verification, migrate guest addresses
       if (signUpData.user) {
         await migrateGuestAddresses(signUpData.user.id);
+        
+        // Set user data in Crisp
+        if (window.$crisp) {
+          window.$crisp.push(['set', 'user:email', signUpData.user.email]);
+          window.$crisp.push(['set', 'user:nickname', signUpData.user.user_metadata?.display_name || '']);
+          window.$crisp.push(['set', 'user:phone', signUpData.user.user_metadata?.phone || '']);
+        }
       }
 
       return { user: signUpData.user, needsEmailVerification: false };
