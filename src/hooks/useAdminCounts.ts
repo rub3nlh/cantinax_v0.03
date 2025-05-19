@@ -12,19 +12,21 @@ export function useAdminCounts() {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        // Get count of pending orders
+        // Get count of pending orders with completed payments
         const { count: pendingOrders, error: ordersError } = await supabase
           .from('orders')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
+          .select('*, payment_orders!inner(*)', { count: 'exact', head: true })
+          .eq('status', 'pending')
+          .eq('payment_orders.status', 'completed');
 
         if (ordersError) throw ordersError;
 
-        // Get count of pending deliveries
+        // Get count of pending deliveries for orders with completed payments
         const { count: pendingDeliveries, error: deliveriesError } = await supabase
           .from('order_deliveries')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
+          .select('*, orders!inner(*, payment_orders!inner(*))', { count: 'exact', head: true })
+          .eq('status', 'pending')
+          .eq('orders.payment_orders.status', 'completed');
 
         if (deliveriesError) throw deliveriesError;
 
@@ -69,9 +71,21 @@ export function useAdminCounts() {
       })
       .subscribe();
 
+    const paymentsSubscription = supabase
+      .channel('payments-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'payment_orders'
+      }, () => {
+        fetchCounts();
+      })
+      .subscribe();
+
     return () => {
       ordersSubscription.unsubscribe();
       deliveriesSubscription.unsubscribe();
+      paymentsSubscription.unsubscribe();
     };
   }, []);
 
