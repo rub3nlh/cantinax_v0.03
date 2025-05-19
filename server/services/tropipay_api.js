@@ -43,11 +43,14 @@ class TropiPayAPIService {
    */
   async getAccessToken() {
     try {
+    
+      /*
       // Si ya tenemos un token válido, lo devolvemos
       if (this.accessToken && this.tokenExpiry && new Date() < this.tokenExpiry) {
         console.log('Token de acceso existente y válido, reutilizando...');
         return this.accessToken;
       }
+      */
 
       // Si estamos en modo mock, devolvemos un token falso
       if (process.env.MOCK_PAYMENT === 'true') {
