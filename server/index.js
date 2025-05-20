@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import paymentsRouter from './routes/payments.js';
+import usersRouter from './routes/users.js';
 
 // Load environment variables
 dotenv.config();
@@ -44,6 +45,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/payments', paymentsRouter);
+app.use('/api/users', usersRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

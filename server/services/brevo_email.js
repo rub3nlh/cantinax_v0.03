@@ -272,9 +272,128 @@ const sendDeliveryReminderEmail = async (options) => {
   });
 };
 
+/**
+ * Add a contact to a Brevo list
+ * 
+ * @param {Object} options - Contact options
+ * @param {string} options.email - Contact email address
+ * @param {string} options.name - Contact name
+ * @param {string} options.phone - Contact phone number (optional)
+ * @param {number} options.listId - Brevo list ID (default: 24)
+ * @returns {Promise} - Promise resolving to the API response
+ */
+const addContactToList = async (options) => {
+  try {
+    const payload = {
+      email: options.email,
+      attributes: {
+        NOMBRE: options.name.split(' ')[0] || '',
+        APELLIDOS: options.name.split(' ')[1] || '',
+        PHONE: options.phone || ''
+      },
+      listIds: [options.listId || 24]
+    };
+    
+    console.log('Adding contact to Brevo list:', JSON.stringify(payload, null, 2));
+    
+    try {
+      // First try to create the contact
+      const response = await fetch(`${BREVO_API_URL}/contacts`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': BREVO_API_KEY
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        let data = await response.json();
+        console.log('Contact added successfully to Brevo list:', data);
+        return data;
+      }
+
+      // If response is not OK, check if it's a duplicate error
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (jsonError) {
+        const errorText = await response.text();
+        throw new Error(`Non-JSON response: ${errorText.substring(0, 100)}...`);
+      }
+
+      // Check if this is a duplicate contact error
+      if (response.status === 400 && 
+          errorData.code === 'duplicate_parameter' && 
+          errorData.message.includes('email is already associated')) {
+        
+        console.log('Contact already exists. Updating contact with list ID...');
+        
+        // Get the existing contact
+        const getContactResponse = await fetch(`${BREVO_API_URL}/contacts/${options.email}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'api-key': BREVO_API_KEY
+          }
+        });
+        
+        if (!getContactResponse.ok) {
+          throw new Error(`Failed to get existing contact: ${getContactResponse.status}`);
+        }
+        
+        const existingContact = await getContactResponse.json();
+        
+        // Update the existing contact to add it to the list
+        const listId = options.listId || 24;
+        const currentListIds = existingContact.listIds || [];
+        
+        // Only add the list ID if it's not already there
+        if (!currentListIds.includes(listId)) {
+          const updatePayload = {
+            listIds: [...currentListIds, listId],
+            attributes: payload.attributes
+          };
+          
+          const updateResponse = await fetch(`${BREVO_API_URL}/contacts/${options.email}`, {
+            method: 'PUT',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'api-key': BREVO_API_KEY
+            },
+            body: JSON.stringify(updatePayload)
+          });
+          
+          if (!updateResponse.ok) {
+            throw new Error(`Failed to update contact: ${updateResponse.status}`);
+          }
+          
+          console.log('Contact updated successfully with list ID:', listId);
+          return { ...existingContact, updated: true, listIds: [...currentListIds, listId] };
+        } else {
+          console.log('Contact already in list:', listId);
+          return { ...existingContact, alreadyInList: true };
+        }
+      }
+      
+      // If it's not a duplicate error or we couldn't handle it, throw the original error
+      throw new Error(`API error: ${response.status} - ${JSON.stringify(errorData)}`);
+    } catch (apiError) {
+      console.error('API error in addContactToList:', apiError);
+      throw apiError;
+    }
+  } catch (error) {
+    console.error('Error adding contact to list:', error);
+    throw error;
+  }
+};
+
 export {
   sendConfirmationEmail,
   sendPasswordResetEmail,
   sendOrderConfirmationEmail,
-  sendDeliveryReminderEmail
+  sendDeliveryReminderEmail,
+  addContactToList
 };

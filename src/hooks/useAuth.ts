@@ -65,6 +65,41 @@ export function useAuth() {
             window.$crisp.push(['set', 'user:nickname', newSession.user.user_metadata?.display_name || '']);
             window.$crisp.push(['set', 'user:phone', newSession.user.user_metadata?.phone || '']);
           }
+          
+          // Add user to Brevo list if email is verified
+          // Check if this is a newly verified user (USER_UPDATED event and has confirmed_at)
+          if (event === 'USER_UPDATED' && newSession.user.email_confirmed_at) {
+            // Check if we've already added this user to the Brevo list
+            const brevoListKey = `brevo_list_added_${newSession.user.id}`;
+            const alreadyAdded = localStorage.getItem(brevoListKey);
+            
+            if (!alreadyAdded) {
+              try {
+                const response = await fetch('/api/users/add-to-brevo-list', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    email: newSession.user.email,
+                    name: newSession.user.user_metadata?.display_name || '',
+                    phone: newSession.user.user_metadata?.phone || ''
+                  })
+                });
+                
+                if (response.ok) {
+                  // Mark this user as added to prevent duplicate calls
+                  localStorage.setItem(brevoListKey, 'true');
+                  console.log('User added to Brevo list after email verification');
+                }
+              } catch (brevoError) {
+                // Log error but don't disrupt the user experience
+                console.error('Error adding verified user to Brevo list:', brevoError);
+              }
+            } else {
+              console.log('User already added to Brevo list, skipping');
+            }
+          }
         }
       }
     });
