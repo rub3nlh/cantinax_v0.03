@@ -160,7 +160,7 @@ router.post("/webhook", async (req, res) => {
         const paymentSuccessful = status === 'OK';
         await updatePaymentOrderStatus(paymentOrder.id, paymentSuccessful, data);
         
-        // If payment was successful, send confirmation email
+        // If payment was successful, send confirmation email and register order in Brevo
         if (paymentSuccessful) {
             try {
                 await sendOrderConfirmationEmail({
@@ -178,6 +178,23 @@ router.post("/webhook", async (req, res) => {
                 });
                 
                 console.log(`Order confirmation email sent for order ${orderData.orderId}`);
+                
+                // Register order in Brevo for purchase statistics
+                try {
+                    const { registerOrder } = await import('../services/brevo_stats.js');
+                    await registerOrder({
+                        orderId: orderData.orderId,
+                        email: orderData.email,
+                        packageId: orderData.packageName.replace(/\s+/g, '-').toLowerCase(), // Convert to ID format
+                        packageQuantity: orderData.packageQuantity || 1,
+                        packagePrice: orderData.packagePrice,
+                        totalAmount: orderData.totalAmount
+                    });
+                    console.log(`Order ${orderData.orderId} registered in Brevo for statistics`);
+                } catch (brevoError) {
+                    console.error('Error registering order in Brevo:', brevoError);
+                    // Continue processing even if Brevo registration fails
+                }
             } catch (emailError) {
                 console.error('Error sending order confirmation email:', emailError);
                 // Continue processing even if email fails
