@@ -71,7 +71,7 @@ export const Footer: React.FC = () => {
           <div className="space-y-4">
             <h3 className="text-2xl font-bold mb-4 text-red-500">Síguenos</h3>
             <div className="flex space-x-4 flex-wrap">
-              <a href="https://www.instagram.com/lacantinaxl" className="hover:text-red-500 mb-2" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.instagram.com/cantinaxl" className="hover:text-red-500 mb-2" target="_blank" rel="noopener noreferrer">
                 <Instagram className="w-8 h-8" />
               </a>
               <a href="http://wa.me/+5350441098" className="hover:text-red-500 mb-2" target="_blank" rel="noopener noreferrer">
@@ -110,7 +110,6 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2">
               <li className="text-gray-300 hover:text-red-500 transition-colors">VISA</li>
               <li className="text-gray-300 hover:text-red-500 transition-colors">MASTERCARD</li>
-              <li className="text-gray-300 hover:text-red-500 transition-colors">AMEX</li>
               <li className="text-gray-300 hover:text-red-500 transition-colors">TROPIPAY</li>
             </ul>
           </div>
