@@ -5,6 +5,7 @@ import cors from 'cors';
 
 // Include your API routes
 import paymentRoutes from './routes/payments.js';
+import usersRouter from './routes/users.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,6 +25,7 @@ app.use(express.static(path.resolve(__dirname, '../dist')));
 
 // API routes
 app.use('/api/payments', paymentRoutes);
+app.use('/api/users', usersRouter);
 
 // Serve the React app for any other routes
 app.get('*', (req, res) => {
