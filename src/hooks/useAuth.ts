@@ -23,6 +23,64 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
 
+  /**
+   * Add a user to the Brevo marketing list
+   * This function handles adding a user to the Brevo list and manages the localStorage flag
+   * to prevent duplicate additions
+   */
+  const addUserToBrevoList = async (user: User, context: string = 'general') => {
+    if (!user.email_confirmed_at) {
+      console.log('User email not verified, skipping Brevo list addition');
+      return;
+    }
+
+    // Check if we've already added this user to the Brevo list
+    const brevoListKey = `brevo_list_added_${user.id}`;
+    const alreadyAdded = localStorage.getItem(brevoListKey);
+    
+    if (alreadyAdded) {
+      console.log(`${context} user already added to Brevo list, skipping`);
+      return;
+    }
+    
+    try {
+      console.log(`Attempting to add ${context} user to Brevo list:`, user.email);
+      const response = await fetch('/api/users/add-to-brevo-list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: user.email,
+          name: user.user_metadata?.display_name || '',
+          phone: user.user_metadata?.phone || ''
+        })
+      });
+      
+      if (response.ok) {
+        // Mark this user as added to prevent duplicate calls
+        localStorage.setItem(brevoListKey, 'true');
+        console.log(`${context} user added to Brevo list successfully`);
+      } else {
+        console.error(`Failed to add ${context} user to Brevo list:`, await response.text());
+      }
+    } catch (brevoError) {
+      // Log error but don't disrupt the user experience
+      console.error(`Error adding ${context} user to Brevo list:`, brevoError);
+    }
+  };
+
+  /**
+   * Set user data in Crisp chat widget
+   */
+  const setCrispUserData = (user: User) => {
+    if (window.$crisp) {
+      window.$crisp.push(['set', 'user:email', user.email]);
+      window.$crisp.push(['set', 'user:nickname', user.user_metadata?.display_name || '']);
+      window.$crisp.push(['set', 'user:phone', user.user_metadata?.phone || '']);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -37,6 +95,11 @@ export function useAuth() {
           setInitialized(true);
           setLoading(false);
           console.log('🔐 Auth initialized:', initialSession ? 'Session exists' : 'No session');
+          
+          // If we have a verified user in the initial session, add them to Brevo list
+          if (initialSession?.user) {
+            await addUserToBrevoList(initialSession.user, 'initial session');
+          }
         }
       } catch (error) {
         console.error('Error getting initial session:', error);
@@ -60,45 +123,15 @@ export function useAuth() {
         
         // Set user data in Crisp when user is verified or signs in
         if (newSession?.user && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
-          if (window.$crisp) {
-            window.$crisp.push(['set', 'user:email', newSession.user.email]);
-            window.$crisp.push(['set', 'user:nickname', newSession.user.user_metadata?.display_name || '']);
-            window.$crisp.push(['set', 'user:phone', newSession.user.user_metadata?.phone || '']);
-          }
+          setCrispUserData(newSession.user);
           
           // Add user to Brevo list if email is verified
-          // Check if this is a newly verified user (USER_UPDATED event and has confirmed_at)
-          if (event === 'USER_UPDATED' && newSession.user.email_confirmed_at) {
-            // Check if we've already added this user to the Brevo list
-            const brevoListKey = `brevo_list_added_${newSession.user.id}`;
-            const alreadyAdded = localStorage.getItem(brevoListKey);
-            
-            if (!alreadyAdded) {
-              try {
-                const response = await fetch('/api/users/add-to-brevo-list', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    email: newSession.user.email,
-                    name: newSession.user.user_metadata?.display_name || '',
-                    phone: newSession.user.user_metadata?.phone || ''
-                  })
-                });
-                
-                if (response.ok) {
-                  // Mark this user as added to prevent duplicate calls
-                  localStorage.setItem(brevoListKey, 'true');
-                  console.log('User added to Brevo list after email verification');
-                }
-              } catch (brevoError) {
-                // Log error but don't disrupt the user experience
-                console.error('Error adding verified user to Brevo list:', brevoError);
-              }
-            } else {
-              console.log('User already added to Brevo list, skipping');
-            }
+          // This happens in two cases:
+          // 1. When a user verifies their email (USER_UPDATED event)
+          // 2. When a user signs in with a verified email (SIGNED_IN event)
+          if ((event === 'USER_UPDATED' && newSession.user.email_confirmed_at) || 
+              (event === 'SIGNED_IN' && newSession.user.email_confirmed_at)) {
+            await addUserToBrevoList(newSession.user, 'auth state change');
           }
         }
       }
@@ -145,11 +178,10 @@ export function useAuth() {
         await migrateGuestAddresses(signUpData.user.id);
         
         // Set user data in Crisp
-        if (window.$crisp) {
-          window.$crisp.push(['set', 'user:email', signUpData.user.email]);
-          window.$crisp.push(['set', 'user:nickname', signUpData.user.user_metadata?.display_name || '']);
-          window.$crisp.push(['set', 'user:phone', signUpData.user.user_metadata?.phone || '']);
-        }
+        setCrispUserData(signUpData.user);
+        
+        // If the user is already verified (rare case), add them to Brevo list
+        await addUserToBrevoList(signUpData.user, 'sign up');
       }
 
       return { user: signUpData.user, needsEmailVerification: false };
@@ -177,15 +209,14 @@ export function useAuth() {
       }
 
       // Set user data in Crisp
-      if (window.$crisp && data.user) {
-        window.$crisp.push(['set', 'user:email', data.user.email]);
-        window.$crisp.push(['set', 'user:nickname', data.user.user_metadata?.display_name || '']);
-        window.$crisp.push(['set', 'user:phone', data.user.user_metadata?.phone || '']);
-      }
-
-      // Migrate guest addresses to Supabase after successful login
       if (data.user) {
+        setCrispUserData(data.user);
+
+        // Migrate guest addresses to Supabase after successful login
         await migrateGuestAddresses(data.user.id);
+        
+        // If the user has a verified email, add them to Brevo list
+        await addUserToBrevoList(data.user, 'sign in');
       }
 
       return data;
