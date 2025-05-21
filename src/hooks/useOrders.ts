@@ -503,6 +503,111 @@ export function useOrders(initialFilters: OrderFilters = { paymentStatus: null, 
     }
   }, [totalPages, currentPage]);
 
+  const cancelOrder = async (orderId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 1. Check if the order is in "pending" status and payment is completed
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select(`
+          id, 
+          status, 
+          payment_orders!inner(status)
+        `)
+        .eq('id', orderId)
+        .eq('payment_orders.status', 'completed')
+        .single();
+
+      if (orderError) {
+        console.error('Error fetching order:', orderError);
+        throw new Error('Error al verificar el estado de la orden');
+      }
+
+      if (!orderData) {
+        throw new Error('Orden no encontrada o pago no completado');
+      }
+
+      if (orderData.status !== 'pending') {
+        throw new Error('Solo se pueden cancelar órdenes en estado pendiente');
+      }
+
+      // 2. Check if all deliveries associated with the order are in "pending" status
+      const { data: deliveriesData, error: deliveriesError } = await supabase
+        .from('order_deliveries')
+        .select('id, status')
+        .eq('order_id', orderId);
+
+      if (deliveriesError) {
+        console.error('Error fetching deliveries:', deliveriesError);
+        throw new Error('Error al verificar las entregas');
+      }
+
+      // Check if all deliveries are in pending status
+      const allDeliveriesPending = deliveriesData.every(delivery => delivery.status === 'pending');
+      if (!allDeliveriesPending) {
+        throw new Error('No se puede cancelar la orden porque hay entregas en proceso');
+      }
+
+      // 3. Check if any meal preparation process has started
+      const { data: mealsData, error: mealsError } = await supabase
+        .from('delivery_meals')
+        .select(`
+          id, 
+          status,
+          delivery_id,
+          order_deliveries!inner(order_id)
+        `)
+        .eq('order_deliveries.order_id', orderId);
+
+      if (mealsError) {
+        console.error('Error fetching meals:', mealsError);
+        throw new Error('Error al verificar las comidas');
+      }
+
+      // Check if any meal is completed
+      const anyMealCompleted = mealsData.some(meal => meal.status === 'completed');
+      if (anyMealCompleted) {
+        throw new Error('No se puede cancelar la orden porque ya se ha comenzado la preparación de alguna comida');
+      }
+
+      // 4. Update the order status to "cancelled"
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', orderId);
+
+      if (updateError) {
+        console.error('Error updating order status:', updateError);
+        throw new Error('Error al cancelar la orden');
+      }
+      
+      // 5. Also update all associated deliveries to "failed" (since "cancelled" is not a valid status for deliveries)
+      const { error: deliveriesUpdateError } = await supabase
+        .from('order_deliveries')
+        .update({ status: 'failed' })
+        .eq('order_id', orderId);
+        
+      if (deliveriesUpdateError) {
+        console.error('Error updating deliveries status:', deliveriesUpdateError);
+        throw new Error('Error al cancelar las entregas asociadas');
+      }
+
+      // Refetch orders to update UI
+      await fetchOrders();
+      await fetchTotalCount();
+
+      return true;
+    } catch (err) {
+      console.error('Error cancelling order:', err);
+      setError(err instanceof Error ? err.message : 'Error al cancelar la orden');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     orders,
     loading,
@@ -513,6 +618,7 @@ export function useOrders(initialFilters: OrderFilters = { paymentStatus: null, 
     setCurrentPage,
     filters,
     updateFilters,
-    refetch: fetchOrders
+    refetch: fetchOrders,
+    cancelOrder
   };
 }

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ChevronDown, ChevronLeft, ChevronRight, AlertCircle, Clock, CheckCircle, XCircle, Package, Calendar, Truck } from 'lucide-react';
+import { Search, ChevronDown, ChevronLeft, ChevronRight, AlertCircle, Clock, CheckCircle, XCircle, Package, Calendar, Truck, Ban } from 'lucide-react';
 import { useOrders, OrderFilters } from '../../hooks/useOrders';
 
 const ITEMS_PER_PAGE = 10;
@@ -51,6 +51,11 @@ export const AdminOrders: React.FC = () => {
     searchTerm: searchTerm
   };
   
+  // State for cancellation modal
+  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  
   // Use the hook with filters
   const { 
     orders, 
@@ -60,7 +65,8 @@ export const AdminOrders: React.FC = () => {
     setCurrentPage, 
     totalPages, 
     totalCount,
-    updateFilters
+    updateFilters,
+    cancelOrder
   } = useOrders(initialFilters);
 
   const toggleOrderExpansion = (orderId: string) => {
@@ -69,6 +75,25 @@ export const AdminOrders: React.FC = () => {
         ? prev.filter(id => id !== orderId)
         : [...prev, orderId]
     );
+  };
+  
+  // Handle order cancellation
+  const handleCancelOrder = async () => {
+    if (!cancelOrderId) return;
+    
+    try {
+      setIsCancelling(true);
+      setCancelError(null);
+      
+      await cancelOrder(cancelOrderId);
+      
+      // Close the modal after successful cancellation
+      setCancelOrderId(null);
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : 'Error al cancelar la orden');
+    } finally {
+      setIsCancelling(false);
+    }
   };
   
   // Update filters when they change
@@ -163,9 +188,48 @@ export const AdminOrders: React.FC = () => {
       </div>
     );
   }
+  
+  // Cancellation confirmation modal
+  const CancellationModal = () => {
+    if (!cancelOrderId) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full">
+          <h3 className="text-xl font-bold mb-4">Confirmar cancelación</h3>
+          <p className="mb-6">¿Estás seguro de que deseas cancelar esta orden? Esta acción no se puede deshacer.</p>
+          
+          {cancelError && (
+            <div className="mb-4 p-3 bg-red-100 text-red-800 rounded-lg">
+              {cancelError}
+            </div>
+          )}
+          
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setCancelOrderId(null)}
+              disabled={isCancelling}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleCancelOrder}
+              disabled={isCancelling}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:bg-red-300"
+            >
+              {isCancelling ? 'Cancelando...' : 'Confirmar cancelación'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div>
+      {/* Cancellation Modal */}
+      {cancelOrderId && <CancellationModal />}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">Gestión de Órdenes</h1>
       </div>
@@ -223,16 +287,33 @@ export const AdminOrders: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => toggleOrderExpansion(order.id)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <ChevronDown
-                    className={`w-6 h-6 transition-transform ${
-                      expandedOrders.includes(order.id) ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
+                <div className="flex items-center gap-3">
+                  {/* Cancel Order button - only show for pending orders with all pending deliveries */}
+                  {order.status === 'pending' && 
+                   order.deliveries.every(delivery => delivery.status === 'pending') && 
+                   order.deliveries.every(delivery => 
+                     delivery.meals.every(meal => meal.status === 'pending')
+                   ) && (
+                    <button
+                      onClick={() => setCancelOrderId(order.id)}
+                      className="px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-1"
+                    >
+                      <Ban className="w-4 h-4" />
+                      Cancelar
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={() => toggleOrderExpansion(order.id)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <ChevronDown
+                      className={`w-6 h-6 transition-transform ${
+                        expandedOrders.includes(order.id) ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
 
               <AnimatePresence>
