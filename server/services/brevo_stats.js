@@ -105,6 +105,10 @@ const registerOrder = async (orderData) => {
           "updatedAt": formattedDate,
           "status": "completed",
           "amount": orderData.totalAmount,
+          "storeId": "cantinaxl",
+          "coupons": [
+            orderData.coupon || "",
+          ],
           "products": [
             {
               "productId": orderData.packageId,
