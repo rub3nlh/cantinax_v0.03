@@ -101,17 +101,26 @@ export const ThankYouPage: React.FC = () => {
       // Verificar si alguna está completada o fallida
       const completedPayment = paymentOrders?.find(p => p.status === 'completed');
       const failedPayment = paymentOrders?.find(p => p.status === 'failed');
+      const pendingPayments = paymentOrders?.filter(p => p.status === 'pending');
+      
+      console.log('Estado de pagos:', {
+        completedCount: paymentOrders?.filter(p => p.status === 'completed').length || 0,
+        failedCount: paymentOrders?.filter(p => p.status === 'failed').length || 0,
+        pendingCount: pendingPayments?.length || 0,
+        totalCount: paymentOrders?.length || 0
+      });
       
       if (completedPayment) {
-        console.log('Pago verificado como completado');
+        console.log('Pago verificado como completado:', completedPayment);
         setPaymentStatus('completed');
         trackPaymentEvent(true, completedPayment);
       } else if (failedPayment) {
-        console.log('Pago verificado como fallido');
+        console.log('Pago verificado como fallido:', failedPayment);
         setPaymentStatus('failed');
         setError(failedPayment.error_message || 'El pago no ha podido ser procesado');
         trackPaymentEvent(false, failedPayment);
       } else {
+        console.log('No se encontró un pago completado o fallido, continuando polling...');
         // Incrementar contador para el siguiente intento
         setPollingCount(prev => prev + 1);
       }
@@ -123,10 +132,13 @@ export const ThankYouPage: React.FC = () => {
   
   // Función para registrar eventos de pago
   const trackPaymentEvent = (isSuccessful: boolean, paymentOrder: PaymentOrder) => {
-    if (!orderId || !orderDetails?.packageData) return;
+    if (!orderId || !orderDetails?.packageData) {
+      console.error('No se puede registrar evento de pago: faltan datos de orden o paquete', { orderId, orderDetails });
+      return;
+    }
     
-    // Registrar evento de compra completada
-    trackEvent(EventTypes.PURCHASE_COMPLETED, {
+    // Preparar datos para el evento
+    const eventData = {
       order_id: orderId,
       reference: paymentOrder.reference || reference || orderId,
       payment_state: isSuccessful ? '5' : '0',
@@ -143,17 +155,25 @@ export const ThankYouPage: React.FC = () => {
       funnel_step: 'purchase_completed',
       conversion: true,
       payment_successful: isSuccessful
-    });
+    };
+    
+    console.log('Registrando evento de compra completada en Amplitude:', eventData);
+    
+    // Registrar evento de compra completada
+    trackEvent(EventTypes.PURCHASE_COMPLETED, eventData);
     
     // Registrar evento adicional si el pago fue exitoso
     if (isSuccessful) {
-      trackEvent(EventTypes.PAYMENT_COMPLETED, {
+      const paymentEventData = {
         order_id: orderId,
         reference: paymentOrder.reference || reference || orderId,
         payment_method: 'tropipay',
         payment_state: '5',
         funnel_step: 'payment_completed'
-      });
+      };
+      
+      console.log('Registrando evento de pago completado en Amplitude:', paymentEventData);
+      trackEvent(EventTypes.PAYMENT_COMPLETED, paymentEventData);
     }
   };
   

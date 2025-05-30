@@ -60,7 +60,14 @@ function App() {
         enabled: true, // Habilitar en todos los entornos para desarrollo y pruebas
       });
       
-      console.log('Analytics initialized successfully');
+      console.log('Analytics initialized successfully', {
+        googleAnalyticsConfigured: !!googleAnalyticsId,
+        amplitudeConfigured: !!amplitudeApiKey
+      });
+      
+      if (!amplitudeApiKey) {
+        console.warn('Amplitude API key is not configured. Purchase tracking events may not be sent.');
+      }
     } catch (error) {
       console.error('Error initializing analytics:', error);
     }
