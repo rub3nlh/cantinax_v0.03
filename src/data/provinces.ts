@@ -31,15 +31,6 @@ export const provinces: Province[] = [
     name: 'Mayabeque',
     municipalities: [
       'San José de las Lajas',
-      'Santa Cruz del Norte',
-      'Jaruco',
-      'Madruga',
-      'Nueva Paz',
-      'San Nicolás',
-      'Güines',
-      'Melena del Sur',
-      'Batabanó',
-      'Quivicán',
       'Bejucal'
     ]
   },
@@ -47,17 +38,15 @@ export const provinces: Province[] = [
     id: 'artemisa',
     name: 'Artemisa',
     municipalities: [
-      'Alquízar',
-      'Artemisa',
       'Bauta',
-      'Caimito',
-      'Guanajay',
       'Güira de Melena',
-      'Mariel',
-      'San Antonio de los Baños',
-      'Bahía Honda',
-      'Candelaria',
-      'San Cristóbal'
+      'Caimito',
+      'San Antonio de los Baños'
     ]
   }
 ];
+
+/*
+- Mayabeque: Bejucal y San José de las Lajas
+- Artemisa: Güira de melena, San Antonio, Bauta y Caimito
+*/
