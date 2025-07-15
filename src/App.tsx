@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
+import { MaintenancePage } from './pages/MaintenancePage';
 import { PackageSelection } from './pages/PackageSelection';
 import { MealSelection } from './pages/MealSelection';
 import { OrderSummary } from './pages/OrderSummary';
@@ -45,6 +46,14 @@ function App() {
   const { isAdmin, loading: adminLoading } = useAdmin();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Check if maintenance mode is enabled
+  const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
+
+  // If maintenance mode is enabled, show only the maintenance page
+  if (isMaintenanceMode) {
+    return <MaintenancePage />;
+  }
 
   // Inicializar analytics al cargar la aplicación
   useEffect(() => {

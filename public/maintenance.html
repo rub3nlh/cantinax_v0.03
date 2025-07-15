@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mantenimiento - LaCantinaXL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #FDF6F0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .container {
+            max-width: 32rem;
+            text-align: center;
+        }
+        
+        .logo {
+            margin-bottom: 3rem;
+        }
+        
+        .logo img {
+            height: 5rem;
+            width: auto;
+            object-fit: contain;
+        }
+        
+        .maintenance-icon {
+            margin-bottom: 2rem;
+        }
+        
+        .icon-circle {
+            width: 6rem;
+            height: 6rem;
+            background-color: #ef4444;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+        }
+        
+        .main-content {
+            margin-bottom: 3rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #111827;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+        
+        .message {
+            margin-bottom: 1rem;
+        }
+        
+        .message p {
+            font-size: 1.25rem;
+            color: #374151;
+            margin-bottom: 1rem;
+        }
+        
+        .contact-box {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f3f4f6;
+        }
+        
+        .contact-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .contact-header span {
+            font-size: 1.5rem;
+        }
+        
+        .contact-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+        }
+        
+        .contact-text {
+            color: #374151;
+            margin-bottom: 1rem;
+        }
+        
+        .email-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: #ef4444;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        
+        .email-button:hover {
+            background-color: #dc2626;
+        }
+        
+        .footer-text {
+            margin-top: 2rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .message p {
+                font-size: 1.125rem;
+            }
+            
+            .contact-box {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Logo -->
+        <div class="logo">
+            <img 
+                src="https://spauqltlvfrjmfrghpgk.supabase.co/storage/v1/object/public/site-media//cantinaxl.png" 
+                alt="LaCantinaXL Logo"
+            />
+        </div>
+
+        <!-- Maintenance Icon -->
+        <div class="maintenance-icon">
+            <div class="icon-circle">
+                🔧
+            </div>
+        </div>
+
+        <!-- Main Message -->
+        <div class="main-content">
+            <h1>Estamos en mantenimiento</h1>
+            
+            <div class="message">
+                <p>Estamos trabajando para mejorar el sitio.</p>
+                <p>En breve estaremos de vuelta.</p>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="contact-box">
+                <div class="contact-header">
+                    <span>📧</span>
+                    <h2>¿Tienes alguna duda?</h2>
+                </div>
+                <p class="contact-text">Escríbenos a:</p>
+                <a href="mailto:soporte@lacantinaxl.com" class="email-button">
+                    📧 soporte@lacantinaxl.com
+                </a>
+            </div>
+
+            <!-- Additional Info -->
+            <div class="footer-text">
+                <p>Gracias por tu paciencia mientras mejoramos tu experiencia.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
